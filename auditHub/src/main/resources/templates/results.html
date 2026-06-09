@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AuditHub — Sonuçlar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="crossorigin"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Montserrat:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+    <!-- ===== SOL SIDEBAR DOCK ===== -->
+    <nav class="side-dock">
+        <div class="dock-brand">
+            <div class="dock-logo-icon">
+                <img src="/img/thy-logo.png"
+                     alt="THY"
+                     class="dock-logo-img"
+                     onerror="this.onerror=null; this.src='/img/thy-logo.svg';"/>
+            </div>
+            <div>
+                <div class="dock-title">AuditHub</div>
+                <div class="dock-subtitle">Jira Export</div>
+            </div>
+        </div>
+
+        <ul class="dock-nav">
+            <li class="dock-nav-item">
+                <a href="/" style="color:inherit;text-decoration:none;">
+                    <span>&#8592;</span> Filtrelere Dön
+                </a>
+            </li>
+        </ul>
+        <div class="dock-footer">AuditHub &copy; 2026</div>
+    </nav>
+
+    <!-- ===== ANA İÇERİK ===== -->
+    <main class="main-content">
+
+        <!-- Başlık -->
+        <header class="content-header">
+            <div>
+                <h1 class="content-title">Sonuçlar</h1>
+                <p class="content-subtitle">
+                    <span th:text="${issueCount}">0</span> issue bulundu.
+                    Sarı kolonları doldurun, ardından Excel'e aktarın.
+                </p>
+            </div>
+        </header>
+
+        <!-- JQL Bilgisi -->
+        <div class="results-jql-bar">
+            <span class="results-jql-label">JQL:</span>
+            <code class="results-jql-text" th:text="${jql}"></code>
+        </div>
+
+        <!-- Tablo + Export Formu -->
+        <form th:action="@{/export-excel}" method="post" id="exportForm">
+            <input type="hidden" name="filename"   th:value="${filename}"/>
+            <input type="hidden" name="mudurluk"   th:value="${mudurluk}"/>
+            <input type="hidden" name="yearMonth"  th:value="${yearMonth}"/>
+
+            <!-- Üst araç çubuğu -->
+            <div class="results-toolbar">
+                <a href="/" class="btn-secondary">&#8592; Filtrelere Dön</a>
+                <button type="submit" class="btn-primary" id="exportBtn">
+                    <span id="exportBtnText">&#8595;&nbsp; Excel İndir</span>
+                    <span id="exportBtnLoading" class="hidden">İndiriliyor <span class="plane-fly">✈</span> (<span id="exportCountdown">8</span>s)</span>
+                </button>
+            </div>
+
+            <!-- Kaydırılabilir tablo -->
+            <div class="results-table-wrapper">
+                <table class="results-table" th:if="${!#lists.isEmpty(rows)}">
+                    <thead>
+                        <tr>
+                            <th class="col-del"></th>
+                            <th class="col-seq">#</th>
+                            <th>Issue Type</th>
+                            <th>Key</th>
+                            <th class="col-summary">Summary</th>
+                            <th>Status</th>
+                            <th>Labels</th>
+                            <th>Bileşen</th>
+                            <th>BTA (Test)</th>
+                            <th>BTA (Dev)</th>
+                            <th>BTA Root Cause</th>
+                            <th>Tester</th>
+                            <th>Assignee</th>
+                            <th>Created</th>
+                            <!-- Sarı kolonlar -->
+                            <th class="col-yellow">Ürün</th>
+                            <th class="col-yellow">Issue Type Uygunluk</th>
+                            <th class="col-yellow">Analiz Format Uygunluk</th>
+                            <th class="col-yellow">Analiz İçerik Olgunluk</th>
+                            <th class="col-yellow col-wide">Analiz Neden Uygun Değil?</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="row, stat : ${rows}">
+                            <td class="col-del">
+                                <button type="button" class="btn-del-row" onclick="deleteRow(this)" title="Satırı çıkar">✕</button>
+                            </td>
+                            <!-- Sequence -->
+                            <td class="col-seq" th:text="${stat.index + 1}"></td>
+
+                            <!-- Hidden Jira fields -->
+                            <input type="hidden" th:name="'rows[' + ${stat.index} + '].issueType'"  th:value="${row.issueType}"/>
+                            <input type="hidden" th:name="'rows[' + ${stat.index} + '].key'"         th:value="${row.key}"/>
+                            <input type="hidden" th:name="'rows[' + ${stat.index} + '].summary'"     th:value="${row.summary}"/>
+                            <input type="hidden" th:name="'rows[' + ${stat.index} + '].status'"      th:value="${row.status}"/>
+                            <input type="hidden" th:name="'rows[' + ${stat.index} + '].labels'"      th:value="${row.labels}"/>
+                            <input type="hidden" th:name="'rows[' + ${stat.index} + '].btaTest'"     th:value="${row.btaTest}"/>
+                            <input type="hidden" th:name="'rows[' + ${stat.index} + '].btaDev'"      th:value="${row.btaDev}"/>
+                            <input type="hidden" th:name="'rows[' + ${stat.index} + '].btaRootCause'" th:value="${row.btaRootCause}"/>
+                            <input type="hidden" th:name="'rows[' + ${stat.index} + '].tester'"      th:value="${row.tester}"/>
+                            <input type="hidden" th:name="'rows[' + ${stat.index} + '].assignee'"    th:value="${row.assignee}"/>
+                            <input type="hidden" th:name="'rows[' + ${stat.index} + '].created'"     th:value="${row.created}"/>
+                            <input type="hidden" th:name="'rows[' + ${stat.index} + '].component'"   th:value="${row.component}"/>
+
+                            <!-- Görünen Jira alanları -->
+                            <td th:text="${row.issueType}"></td>
+                            <td>
+                                <a th:href="@{'https://jira.thy.com/browse/' + ${row.key}}"
+                                   th:text="${row.key}"
+                                   target="_blank"
+                                   class="jira-link"></a>
+                            </td>
+                            <td class="col-summary" th:text="${row.summary}"></td>
+                            <td><span class="status-badge" th:text="${row.status}"></span></td>
+                            <td th:text="${row.labels}"></td>
+                            <td th:text="${row.component}"></td>
+                            <td class="bta-cell" th:text="${row.btaTest}"></td>
+                            <td th:text="${row.btaDev}"></td>
+                            <td th:text="${row.btaRootCause}"></td>
+                            <td th:text="${row.tester}"></td>
+                            <td th:text="${row.assignee}"></td>
+                            <td th:text="${row.created}"></td>
+
+                            <!-- Sarı kolonlar - düzenlenebilir -->
+                            <td class="col-yellow">
+                                <input type="text"
+                                       th:name="'rows[' + ${stat.index} + '].urun'"
+                                       th:value="${row.urun}"
+                                       class="tbl-input"
+                                       placeholder="Ürün adı..."/>
+                            </td>
+                            <td class="col-yellow">
+                                <select th:name="'rows[' + ${stat.index} + '].issueTypeUygunluk'" class="tbl-select">
+                                    <option value="">—</option>
+                                    <option value="Uygun">Uygun</option>
+                                    <option value="Uygun Değil">Uygun Değil</option>
+                                    <option value="Hesaplanamaz">Hesaplanamaz</option>
+                                </select>
+                            </td>
+                            <td class="col-yellow">
+                                <select th:name="'rows[' + ${stat.index} + '].analizFormatUygunluk'" class="tbl-select">
+                                    <option value="">—</option>
+                                    <option value="Uygun">Uygun</option>
+                                    <option value="Uygun Değil">Uygun Değil</option>
+                                    <option value="Hesaplanamaz">Hesaplanamaz</option>
+                                </select>
+                            </td>
+                            <td class="col-yellow">
+                                <select th:name="'rows[' + ${stat.index} + '].analizIcerikOlgunluk'" class="tbl-select">
+                                    <option value="">—</option>
+                                    <option value="Uygun">Uygun</option>
+                                    <option value="Uygun Değil">Uygun Değil</option>
+                                    <option value="Hesaplanamaz">Hesaplanamaz</option>
+                                </select>
+                            </td>
+                            <td class="col-yellow col-wide">
+                                <input type="text"
+                                       th:name="'rows[' + ${stat.index} + '].analizNedenUygunDegil'"
+                                       th:value="${row.analizNedenUygunDegil}"
+                                       class="tbl-input"
+                                       placeholder="Açıklama..."/>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Manuel Satır Ekleme -->
+                <div style="margin-top: 16px;">
+                    <button type="button" class="btn-secondary" onclick="addNewRow()">+ Satır Ekle</button>
+                </div>
+
+                <!-- Boş sonuç -->
+                <div class="results-empty" th:if="${#lists.isEmpty(rows)}">
+                    <p>Seçilen filtrelere uygun issue bulunamadı.</p>
+                    <a href="/" class="btn-primary">&#8592; Filtrelere Dön</a>
+                </div>
+            </div>
+
+            <!-- Alt araç çubuğu -->
+            <div class="results-toolbar results-toolbar-bottom" th:if="${!#lists.isEmpty(rows)}">
+                <a href="/" class="btn-secondary">&#8592; Filtrelere Dön</a>
+                <button type="submit" class="btn-primary">
+                    &#8595;&nbsp; Excel İndir
+                </button>
+            </div>
+        </form>
+
+        <!-- Export Dashboard Modal -->
+        <div id="exportModal" class="modal hidden">
+            <div class="modal-content">
+                <h3 style="margin-top:0; margin-bottom:16px;">Dashboard'a Aktarım</h3>
+                <p style="margin: 0 0 20px 0; color: #555; font-size: 14px;">
+                    Aylık verileriniz <strong>dashboard</strong>'a aktarılsın mı?
+                </p>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn-secondary" onclick="closeExportModal()">Hayır</button>
+                    <button type="button" class="btn-primary" onclick="confirmExportToDashboard()">Evet</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script>
+    // Satır silme
+    function deleteRow(btn) {
+        const tr = btn.closest('tr');
+        tr.remove();
+        reindexRows();
+        updateCount();
+    }
+
+    // Yeni satır ekleme
+    function addNewRow() {
+        const tbody = document.querySelector('.results-table tbody');
+        if (!tbody) return;
+        
+        const rows = tbody.querySelectorAll('tr');
+        const rowCount = rows.length;
+        
+        // Son satırı clone et
+        const lastRow = rows[rowCount - 1];
+        if (!lastRow) return;
+        
+        const newRow = lastRow.cloneNode(true);
+        
+        // Tüm input/select'leri boşalt ve indekslerini güncelle
+        newRow.querySelectorAll('input[name], select[name]').forEach(function(el) {
+            const oldName = el.name;
+            el.name = oldName.replace(/rows\[\d+\]/, 'rows[' + rowCount + ']');
+            // Input ise boşalt
+            if (el.tagName === 'INPUT') {
+                el.value = '';
+            } else if (el.tagName === 'SELECT') {
+                el.value = '';
+            }
+        });
+        
+        tbody.appendChild(newRow);
+        reindexRows();
+        updateCount();
+    }
+
+    // input/select name'lerini sıfırdan indeksle
+    function reindexRows() {
+        const rows = document.querySelectorAll('.results-table tbody tr');
+        rows.forEach(function(tr, idx) {
+            // sıra no
+            tr.querySelector('.col-seq').textContent = idx + 1;
+            // tüm name'li inputlar ve selectler
+            tr.querySelectorAll('input[name], select[name]').forEach(function(el) {
+                el.name = el.name.replace(/rows\[\d+\]/, 'rows[' + idx + ']');
+            });
+        });
+    }
+
+    // başlıktaki issue sayısını güncelle
+    function updateCount() {
+        const cnt = document.querySelectorAll('.results-table tbody tr').length;
+        const el = document.querySelector('.content-subtitle span');
+        if (el) el.textContent = cnt;
+    }
+
+    // Export yükleme animasyonu + geri sayım + Modal
+    let exportFormPending = false;
+    
+    function closeExportModal() {
+        document.getElementById('exportModal').classList.add('hidden');
+        exportFormPending = false;
+    }
+
+    function confirmExportToDashboard() {
+        const form = document.getElementById('exportForm');
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'autoExportToDashboard';
+        input.value = 'true';
+        form.appendChild(input);
+        closeExportModal();
+        exportFormPending = true;
+        form.submit();
+    }
+
+    document.getElementById('exportForm').addEventListener('submit', function(e) {
+        if (!exportFormPending) {
+            e.preventDefault();
+            document.getElementById('exportModal').classList.remove('hidden');
+            return false;
+        }
+        
+        const btn = document.getElementById('exportBtn');
+        const txt = document.getElementById('exportBtnText');
+        const loading = document.getElementById('exportBtnLoading');
+        const countdownEl = document.getElementById('exportCountdown');
+        if (btn) btn.disabled = true;
+        if (txt) txt.classList.add('hidden');
+        if (loading) loading.classList.remove('hidden');
+
+        let seconds = 8;
+        if (countdownEl) countdownEl.textContent = seconds;
+        const timer = setInterval(function() {
+            seconds--;
+            if (countdownEl) countdownEl.textContent = seconds > 0 ? seconds : 0;
+            if (seconds <= 0) {
+                clearInterval(timer);
+                if (btn) btn.disabled = false;
+                if (txt) txt.classList.remove('hidden');
+                if (loading) loading.classList.add('hidden');
+            }
+        }, 1000);
+    });
+</script>
+
+</body>
+</html>

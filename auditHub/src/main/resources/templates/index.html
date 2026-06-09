@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AuditHub — Jira Excel Export</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="crossorigin"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Montserrat:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+    <!-- ===== SOL SIDEBAR DOCK ===== -->
+    <nav class="side-dock">
+        <div class="dock-brand">
+            <div class="dock-logo-icon">
+                <img src="/img/thy-logo.png"
+                     alt="THY"
+                     class="dock-logo-img"
+                     onerror="this.onerror=null; this.src='/img/thy-logo.svg';"/>
+            </div>
+            <div>
+                <div class="dock-title">AuditHub</div>
+                <div class="dock-subtitle">Jira Export</div>
+            </div>
+        </div>
+
+        <ul class="dock-nav">
+            <li class="dock-nav-item">
+                <a href="/dashboard" style="color:inherit;text-decoration:none;">&#9783; Dashboard</a>
+            </li>
+            <li class="dock-nav-item active">
+                <span>&#8595;</span> Excel Export
+            </li>
+        </ul>
+
+        <div class="dock-footer">AuditHub &copy; 2026</div>
+    </nav>
+
+    <!-- ===== ANA İÇERİK ===== -->
+    <div class="content-canvas">
+
+        <!-- Üst bar -->
+        <header class="top-bar">
+            <div class="page-title">
+                <h1>Jira Excel Export</h1>
+                <p>Filtreleri ayarla, Jira'dan issue'ları çek, Excel olarak indir.</p>
+            </div>
+        </header>
+
+        <!-- Kaydırılabilir alan -->
+        <div class="main-content">
+
+            <!-- Hata mesajları -->
+            <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+            <!-- Bilgi mesajı (boş sonuç) -->
+            <div th:if="${infoMessage}" class="alert alert-info" th:text="${infoMessage}"></div>
+
+            <div class="card">
+                <form id="exportForm"
+                      th:action="@{/preview}"
+                      th:object="${filterRequest}"
+                      method="post">
+
+                    <!-- Global validation hataları -->
+                    <div th:if="${#fields.hasAnyErrors()}" class="alert alert-error">
+                        <ul class="error-list">
+                            <li th:each="err : ${#fields.allErrors()}" th:text="${err}"></li>
+                        </ul>
+                    </div>
+
+                    <!-- Müdürlük -->
+                    <div class="form-group">
+                        <label for="mudurluk" class="form-label">Müdürlük</label>
+                        <select id="mudurluk"
+                                th:field="*{mudurluk}"
+                                class="form-input"
+                                th:classappend="${#fields.hasErrors('mudurluk')} ? 'input-error'">
+                            <option value="Açık Sistem Çöz. Md.">Açık Sistem Çöz. Md.</option>
+                            <option value="Rezervasyon &amp; Biletleme Md.">Rezervasyon &amp; Biletleme Md.</option>
+                            <option value="Gelir Yönetimi ve Ücret Çözümleri Md.">Gelir Yönetimi ve Ücret Çözümleri Md.</option>
+                            <option value="Doğrudan Satış Çözümleri Md.">Doğrudan Satış Çözümleri Md.</option>
+                            <option value="Dijital Yolcu Çöz Md.">Dijital Yolcu Çöz Md.</option>
+                            <option value="DCS Çözümleri Md.">DCS Çözümleri Md.</option>
+                            <option value="Alışveriş İçerik Md.">Alışveriş İçerik Md.</option>
+                            <option value="Miles&amp;Smiles Md.">Miles&amp;Smiles Md.</option>
+                            <option value="Biletleme ve Ek Hizmetler Md.">Biletleme ve Ek Hizmetler Md.</option>
+                            <option value="Satış Sonrası ve IRROPS Md.">Satış Sonrası ve IRROPS Md.</option>
+                            <option value="BAGLANTI&amp;UCAK ICI DIJITAL COZUMLER MD.">BAGLANTI&amp;UCAK ICI DIJITAL COZUMLER MD.</option>
+                            <option value="Ajet Dijital Çöz Md.">Ajet Dijital Çöz Md.</option>
+                        </select>
+                        <span th:if="${#fields.hasErrors('mudurluk')}"
+                              class="field-error"
+                              th:errors="*{mudurluk}"></span>
+                    </div>
+
+                    <!-- Issue Types -->
+                    <div class="form-group">
+                        <label class="form-label">Issue Types</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="issueTypes" value="Story"
+                                       th:checked="${filterRequest.issueTypes != null and filterRequest.issueTypes.contains('Story')}"/>
+                                Story
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="issueTypes" value="Task"
+                                       th:checked="${filterRequest.issueTypes != null and filterRequest.issueTypes.contains('Task')}"/>
+                                Task
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="issueTypes" value="Bug"
+                                       th:checked="${filterRequest.issueTypes != null and filterRequest.issueTypes.contains('Bug')}"/>
+                                Bug
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="issueTypes" value="Sub-task"
+                                       th:checked="${filterRequest.issueTypes != null and filterRequest.issueTypes.contains('Sub-task')}"/>
+                                Sub-task
+                            </label>
+                        </div>
+                        <span th:if="${#fields.hasErrors('issueTypes')}"
+                              class="field-error"
+                              th:errors="*{issueTypes}"></span>
+                    </div>
+
+                    <hr class="form-divider"/>
+
+                    <!-- Created Start Date -->
+                    <div class="form-group">
+                        <label for="createdStartDate" class="form-label">Created Start Date</label>
+                        <input type="date"
+                               id="createdStartDate"
+                               th:field="*{createdStartDate}"
+                               class="form-input"
+                               th:classappend="${#fields.hasErrors('createdStartDate')} ? 'input-error'"/>
+                        <span th:if="${#fields.hasErrors('createdStartDate')}"
+                              class="field-error"
+                              th:errors="*{createdStartDate}"></span>
+                    </div>
+
+                    <!-- Statuses -->
+                    <div class="form-group">
+                        <label class="form-label">Statuses</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="statuses" value="Done"
+                                       th:checked="${filterRequest.statuses != null and filterRequest.statuses.contains('Done')}"/>
+                                Done
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="statuses" value="Closed"
+                                       th:checked="${filterRequest.statuses != null and filterRequest.statuses.contains('Closed')}"/>
+                                Closed
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="statuses" value="Resolved"
+                                       th:checked="${filterRequest.statuses != null and filterRequest.statuses.contains('Resolved')}"/>
+                                Resolved
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="statuses" value="UAT"
+                                       th:checked="${filterRequest.statuses != null and filterRequest.statuses.contains('UAT')}"/>
+                                UAT
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="statuses" value="Ready For UAT"
+                                       th:checked="${filterRequest.statuses != null and filterRequest.statuses.contains('Ready For UAT')}"/>
+                                Ready For UAT
+                            </label>
+                        </div>
+                        <span th:if="${#fields.hasErrors('statuses')}"
+                              class="field-error"
+                              th:errors="*{statuses}"></span>
+                    </div>
+
+                    <hr class="form-divider"/>
+
+                    <!-- Status Changed Date Range -->
+                    <div class="form-group">
+                        <label class="form-label">Status Changed Date Range</label>
+                        <div class="date-range">
+                            <div class="date-range-field">
+                                <label for="statusChangedStartDate" class="date-label">Başlangıç</label>
+                                <input type="date"
+                                       id="statusChangedStartDate"
+                                       th:field="*{statusChangedStartDate}"
+                                       class="form-input"
+                                       th:classappend="${#fields.hasErrors('statusChangedStartDate')} ? 'input-error'"/>
+                                <span th:if="${#fields.hasErrors('statusChangedStartDate')}"
+                                      class="field-error"
+                                      th:errors="*{statusChangedStartDate}"></span>
+                            </div>
+                            <span class="date-range-sep">—</span>
+                            <div class="date-range-field">
+                                <label for="statusChangedEndDate" class="date-label">Bitiş</label>
+                                <input type="date"
+                                       id="statusChangedEndDate"
+                                       th:field="*{statusChangedEndDate}"
+                                       class="form-input"
+                                       th:classappend="${#fields.hasErrors('statusChangedEndDate')} ? 'input-error'"/>
+                                <span th:if="${#fields.hasErrors('statusChangedEndDate')}"
+                                      class="field-error"
+                                      th:errors="*{statusChangedEndDate}"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- JQL Preview -->
+                    <div class="form-group">
+                        <label class="form-label">JQL Preview</label>
+                        <textarea id="jqlPreview"
+                                  name="customJql"
+                                  class="jql-preview jql-editable"
+                                  rows="5"
+                                  th:text="${jqlPreview}"
+                                  placeholder="JQL otomatik oluşturulacak veya buraya yazabilirsiniz..."></textarea>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="form-actions">
+                        <button type="submit" id="submitBtn" class="btn-primary">
+                            <span id="btnText">&#128269;&nbsp; Sonuçları Göster</span>
+                            <span id="btnLoading" class="hidden">Yükleniyor <span class="plane-fly">✈</span></span>
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div><!-- /main-content -->
+    </div><!-- /content-canvas -->
+</div><!-- /page-wrapper -->
+
+<script th:src="@{/js/app.js}"></script>
+<script th:inline="javascript">
+</script>
+</body>
+</html>

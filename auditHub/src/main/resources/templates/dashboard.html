@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AuditHub — Dashboard 2026</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="crossorigin"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Montserrat:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <style>
+        /* Dashboard özgün stiller */
+        .dash-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 20px;
+        }
+        .dash-tab-btn {
+            padding: 7px 14px;
+            border: 1.5px solid #c8d6e5;
+            border-radius: 6px;
+            background: #f8fafc;
+            color: #334155;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all .15s;
+            white-space: nowrap;
+        }
+        .dash-tab-btn:hover  { background: #e8f0fe; border-color: #3b82f6; color: #1d4ed8; }
+        .dash-tab-btn.active { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+
+        .dash-panel { display: none; }
+        .dash-panel.active { display: block; }
+
+        .dash-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .dash-table th {
+            background: #1e3a5f;
+            color: #fff;
+            padding: 9px 10px;
+            text-align: center;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .dash-table th.col-ay { background: #152e4d; text-align: left; }
+        .dash-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: center;
+            color: #334155;
+        }
+        .dash-table td.col-ay {
+            text-align: left;
+            font-weight: 600;
+            color: #1e3a5f;
+            background: #f1f5f9;
+        }
+        .dash-table tr:hover td { background: #f0f7ff; }
+        .dash-table tr.avg-row td {
+            background: #fef9c3 !important;
+            font-weight: 700;
+            color: #78350f;
+        }
+        .dash-table tr.avg-row td.col-ay { background: #fef08a !important; }
+        .dash-table td.empty { color: #94a3b8; font-style: italic; }
+
+        .badge-uygun   { color: #15803d; font-weight: 600; }
+        .badge-ud      { color: #b91c1c; font-weight: 600; }
+        .badge-hesap   { color: #b45309; font-weight: 600; }
+        .badge-bta     { color: #6d28d9; font-weight: 700; }
+        .badge-total   { color: #1e40af; font-weight: 700; font-size: 14px; }
+
+        .no-data-msg {
+            padding: 32px;
+            text-align: center;
+            color: #94a3b8;
+            font-style: italic;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1.5px dashed #cbd5e1;
+        }
+
+        .dash-legend {
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            font-size: 12px;
+        }
+        .dash-legend span { display: flex; align-items: center; gap: 4px; }
+
+        .import-bar {
+            background: #f1f5f9;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 22px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 12px;
+        }
+        .import-bar label { font-size: 12px; font-weight: 600; color: #334155; display: block; margin-bottom: 4px; }
+        .import-bar select, .import-bar input[type=month], .import-bar input[type=file] {
+            border: 1.5px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 7px 10px;
+            font-size: 13px;
+            background: #fff;
+            color: #334155;
+            outline: none;
+        }
+        .import-bar select:focus, .import-bar input:focus { border-color: #3b82f6; }
+        .import-bar .btn-import {
+            padding: 8px 22px;
+            background: #1d4ed8;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .import-bar .btn-import:hover { background: #1e40af; }
+        .import-title { font-size: 13px; font-weight: 700; color: #1e3a5f; margin-bottom: 12px; }
+        .alert-success { background: #dcfce7; border: 1px solid #86efac; color: #166534; border-radius: 6px; padding: 10px 16px; margin-bottom: 14px; font-size: 13px; }
+        .alert-error   { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; border-radius: 6px; padding: 10px 16px; margin-bottom: 14px; font-size: 13px; }
+    </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+    <!-- ===== SOL SIDEBAR DOCK ===== -->
+    <nav class="side-dock">
+        <div class="dock-brand">
+            <div class="dock-logo-icon">
+                <img src="/img/thy-logo.png" alt="THY" class="dock-logo-img"
+                     onerror="this.onerror=null;this.src='/img/thy-logo.svg';"/>
+            </div>
+            <div>
+                <div class="dock-title">AuditHub</div>
+                <div class="dock-subtitle">Jira Export</div>
+            </div>
+        </div>
+        <ul class="dock-nav">
+            <li class="dock-nav-item">
+                <a href="/" style="color:inherit;text-decoration:none;">&#8592; Filtrelere Dön</a>
+            </li>
+        </ul>
+        <div class="dock-footer">AuditHub &copy; 2026</div>
+    </nav>
+
+    <!-- ===== ANA İÇERİK ===== -->
+    <main class="main-content">
+
+        <header class="content-header">
+            <div>
+                <h1 class="content-title">Dashboard 2026</h1>
+                <p class="content-subtitle">
+                    Müdürlük bazlı aylık audit istatistikleri.
+                    Veriler, Excel export yapıldığında otomatik güncellenir.
+                </p>
+            </div>
+        </header>
+
+        <!-- Açıklama -->
+        <div class="dash-legend">
+            <span><strong>Toplam</strong> = Audit'e gönderilen task sayısı</span>
+            <span><span class="badge-uygun">✓</span> = Uygun</span>
+            <span><span class="badge-ud">✗</span> = Uygun Değil</span>
+            <span><span class="badge-hesap">?</span> = Hesaplanamaz</span>
+            <span><span class="badge-bta">BTA</span> = Back to Analysis toplam sayısı</span>
+        </div>
+
+        <!-- Excel Import Formu -->
+        <div style="margin-bottom:18px;">
+            <div class="import-title">&#8659; Geçmiş Dönem Excel Yükle</div>
+
+            <div th:if="${importMsg}" class="alert-success" th:text="${importMsg}"></div>
+            <div th:if="${importErr}" class="alert-error" th:text="${importErr}"></div>
+
+            <form th:action="@{/import-dashboard}" method="post" enctype="multipart/form-data">
+                <div class="import-bar">
+                    <div>
+                        <label>Müdürlük</label>
+                        <select name="mudurluk" required>
+                            <option th:each="m : ${mudurlukler}" th:value="${m}" th:text="${m}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Yıl / Ay</label>
+                        <input type="month" name="yearMonth" value="2026-01" required />
+                    </div>
+                    <div>
+                        <label>Excel Dosyası (.xlsx)</label>
+                        <input type="file" name="file" accept=".xlsx" required />
+                    </div>
+                    <div>
+                        <button type="submit" class="btn-import">&#8679; Yükle &amp; Kaydet</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Müdürlük Sekmeleri -->
+        <div class="dash-tabs" id="dashTabs">
+            <button th:each="s, i : ${stats}"
+                    th:text="${s.name}"
+                    th:classappend="${i.index == 0} ? ' active' : ''"
+                    class="dash-tab-btn"
+                    th:attr="onclick='showPanel(' + ${i.index} + ')'">
+            </button>
+        </div>
+
+        <!-- Müdürlük Panelleri -->
+        <div th:each="s, si : ${stats}"
+             th:id="'panel-' + ${si.index}"
+             th:class="${si.index == 0} ? 'dash-panel active' : 'dash-panel'">
+
+            <!-- Veri yok mesajı -->
+            <div class="no-data-msg"
+                 th:if="${s.average == null}">
+                Henüz bu müdürlük için export yapılmamış.
+                Ana sayfadan sorguyu çalıştırıp Excel İndir butonuna basarak veri ekleyebilirsiniz.
+            </div>
+
+            <!-- Tablo -->
+            <div th:if="${s.average != null}" style="overflow-x:auto;">
+                <table class="dash-table">
+                    <thead>
+                        <tr>
+                            <th class="col-ay" rowspan="2">Ay</th>
+                            <th rowspan="2">Toplam<br/>Task</th>
+                            <th colspan="3" class="col-group-header">Analiz Format Uygunluk</th>
+                            <th colspan="3" class="col-group-header">Analiz İçerik Olgunluk</th>
+                            <th rowspan="2">BTA<br/>Sayısı</th>
+                        </tr>
+                        <tr>
+                            <th class="badge-uygun" style="background:#1a3a4d;">Uygun</th>
+                            <th class="badge-ud"    style="background:#1a3a4d;">Uygun Değil</th>
+                            <th class="badge-hesap" style="background:#1a3a4d;">Hesaplanamaz</th>
+                            <th class="badge-uygun" style="background:#1a3a4d;">Uygun</th>
+                            <th class="badge-ud"    style="background:#1a3a4d;">Uygun Değil</th>
+                            <th class="badge-hesap" style="background:#1a3a4d;">Hesaplanamaz</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 12 aylık satırlar -->
+                        <tr th:each="entry, ei : ${s.monthEntries}">
+                            <td class="col-ay" th:text="${monthLabels[ei.index]}"></td>
+                            <!-- Veri varsa doldur, yoksa çizgi -->
+                            <th:block th:if="${entry != null}">
+                                <td><span class="editable" th:text="${entry.totalTasks}" contenteditable="true"></span></td>
+                                <td><span class="editable" th:text="${entry.formatUygun}" contenteditable="true"></span></td>
+                                <td><span class="editable" th:text="${entry.formatUygunDegil}" contenteditable="true"></span></td>
+                                <td><span class="editable" th:text="${entry.formatHesap}" contenteditable="true"></span></td>
+                                <td><span class="editable" th:text="${entry.icerikUygun}" contenteditable="true"></span></td>
+                                <td><span class="editable" th:text="${entry.icerikUygunDegil}" contenteditable="true"></span></td>
+                                <td><span class="editable" th:text="${entry.icerikHesap}" contenteditable="true"></span></td>
+                                <td><span class="editable" th:text="${entry.btaCount}" contenteditable="true"></span></td>
+                            </th:block>
+                            <th:block th:if="${entry == null}">
+                                <td class="empty">—</td>
+                                <td class="empty">—</td>
+                                <td class="empty">—</td>
+                                <td class="empty">—</td>
+                                <td class="empty">—</td>
+                                <td class="empty">—</td>
+                                <td class="empty">—</td>
+                                <td class="empty">—</td>
+                            </th:block>
+                        </tr>
+
+                        <!-- 2026 Ortalama satırı -->
+                        <tr class="avg-row">
+                            <td class="col-ay">2026 Ort.</td>
+                            <td th:text="${s.average.totalTasks}"></td>
+                            <td>
+                                <span th:text="${s.average.formatUygun}"></span>
+                                <span class="metric-percent" th:text="${#numbers.formatDecimal(s.formatUygunPercent, 1, 0) + '%'}"></span>
+                            </td>
+                            <td th:text="${s.average.formatUygunDegil}"></td>
+                            <td th:text="${s.average.formatHesap}"></td>
+                            <td>
+                                <span th:text="${s.average.icerikUygun}"></span>
+                                <span class="metric-percent" th:text="${#numbers.formatDecimal(s.icerikUygunPercent, 1, 0) + '%'}"></span>
+                            </td>
+                            <td th:text="${s.average.icerikUygunDegil}"></td>
+                            <td th:text="${s.average.icerikHesap}"></td>
+                            <td th:text="${s.average.btaCount}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script>
+    function showPanel(idx) {
+        document.querySelectorAll('.dash-panel').forEach(function(p) { p.classList.remove('active'); });
+        document.querySelectorAll('.dash-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+        document.getElementById('panel-' + idx).classList.add('active');
+        document.querySelectorAll('.dash-tab-btn')[idx].classList.add('active');
+    }
+
+    // Editable cells: Blur event'i sırasında save'i serverside yap
+    document.addEventListener('blur', function(e) {
+        if (e.target.classList.contains('editable')) {
+            const cell = e.target;
+            const mudurluk = cell.getAttribute('data-mudurluk');
+            const yearMonth = cell.getAttribute('data-year-month');
+            const field = cell.getAttribute('data-field');
+            const newValue = cell.textContent.trim();
+
+            if (mudurluk && yearMonth && field && newValue) {
+                fetch('/dashboard/save-cell', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `mudurluk=${encodeURIComponent(mudurluk)}&yearMonth=${encodeURIComponent(yearMonth)}&field=${encodeURIComponent(field)}&value=${encodeURIComponent(newValue)}`
+                }).catch(err => console.error('Kaydetme başarısız:', err));
+            }
+        }
+    }, true);
+</script>
+</body>
+</html>
