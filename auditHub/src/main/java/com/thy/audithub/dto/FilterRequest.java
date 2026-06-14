@@ -14,7 +14,10 @@ import java.util.List;
 @Setter
 public class FilterRequest {
 
-    @NotBlank(message = "Müdürlük seçimi zorunludur.")
+    @NotBlank(message = "Jira Personal Access Token zorunludur.")
+    private String jiraToken;
+
+    @NotBlank(message = "Md. seçimi zorunludur.")
     private String mudurluk;
 
     @NotEmpty(message = "En az bir issue type seçilmelidir.")

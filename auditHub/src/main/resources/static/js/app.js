@@ -11,6 +11,7 @@
     // ---------- Element referansları ----------
     const form                   = document.getElementById('exportForm');
     const mudurlukInput          = document.getElementById('mudurluk');
+    const jiraTokenInput         = document.getElementById('jiraToken');
     const createdStartDateInput  = document.getElementById('createdStartDate');
     const statusChangedStartInput = document.getElementById('statusChangedStartDate');
     const statusChangedEndInput  = document.getElementById('statusChangedEndDate');
@@ -30,16 +31,23 @@
         const mudurluk   = mudurlukInput ? mudurlukInput.value.trim() : '';
         const projects   = {
             'Açık Sistem Çöz. Md.': ['FTBASM', 'MSS', 'MES'],
-            'Rezervasyon & Biletleme Md.': ['TRP', 'TKT'],
-            'Gelir Yönetimi ve Ücret Çözümleri Md.': ['PRC', 'RMOP', 'PTS', 'UVYFT'],
-            'Doğrudan Satış Çözümleri Md.': ['NDCIN', 'NDCUI', 'QR', 'KB'],
+            'Rezervasyon & Biletleme Md.': ['TRP', 'TKT', 'IROR', 'IRPR', 'TKTPR', 'TKTOR'],
+            'Gelir Yönetimi ve Ücret Çöz. Md.': ['PRC', 'RMOP', 'PTS', 'UVYFT', 'Cygnus'],
+            'Doğrudan Satış Çöz. Md.': ['NDCIN', 'NDCUI', 'QR', 'KB', 'BWS'],
             'Dijital Yolcu Çöz Md.': ['QCG', 'KIOSK', 'DYMU', 'OTHL', 'SBD', 'TOUR'],
-            'DCS Çözümleri Md.': ['TKP4089', 'DCWB', 'TDCS'],
+            'DCS Çöz. Md.': ['TKP4089', 'DCWB', 'TDCS'],
             'Alışveriş İçerik Md.': ['DIJITAL'],
             'Miles&Smiles Md.': ['DIJITAL'],
             'Biletleme ve Ek Hizmetler Md.': ['DIJITAL'],
-            'Satış Sonrası ve IRROPS Md.': ['DIJITAL']
+            'Satış Sonrası ve IRROPS Md.': ['DIJITAL'],
+            'Bağlantı ve Uçak İçi Dijital Çözümler Md.': ['ONBP', 'BUIDCM', 'TKP14896', 'TKP18320'],
+            'Ajet Dijital Çöz Md.': ['AJETPSSD', 'AKU'],
+            'B2b Çöz Md.': ['CHA', 'AEK', 'TKP24958', 'TKP17702'],
+            'Ödeme Çöz. Md.': ['TKPAY3'],
+            'Miles and Smiles Çöz. Md.': ['LAS', 'SHOPMILES'],
+            'Müşteri İlişkileri ve Pazarlama Çöz.Md': ['IVR', 'WAF', 'TKP14515', 'CPM']
         };
+
         const projectList = projects[mudurluk] || [mudurluk];
         const issueTypes = getCheckedValues('issueTypes');
         const statuses   = getCheckedValues('statuses');
@@ -55,9 +63,10 @@
             return;
         }
 
-        const issueTypePart  = issueTypes.join(', ');
-        const statusPart     = statuses.join(', ');
-        const projectPart    = projectList.map(p => `"${p}"`).join(', ');
+        const quoteValues = (values) => values.map(v => `"${v}"`).join(', ');
+        const issueTypePart  = quoteValues(issueTypes);
+        const statusPart     = quoteValues(statuses);
+        const projectPart    = quoteValues(projectList);
 
         let jql = `issuetype in (${issueTypePart})`
             + ` AND created >= "${createdStart}"`
@@ -99,6 +108,11 @@
         if (btnText)   btnText.classList.add('hidden');
         if (btnLoading) btnLoading.classList.remove('hidden');
 
+        // Kullanıcının girdiği token'ı bir sonraki kullanım için tarayıcıda sakla
+        if (jiraTokenInput && jiraTokenInput.value.trim() !== '') {
+            localStorage.setItem('auditHub_jiraToken', jiraTokenInput.value.trim());
+        }
+
         // Sunucu yanıt verince (sayfa yenilenince) buton zaten sıfırlanır.
         // Hata durumunda (sunucu formu geri dönerse) sayfa reload olmaz,
         // bu yüzden kısa süre sonra tekrar aktif edelim.
@@ -124,7 +138,7 @@
         if (el) el.addEventListener('input', buildJqlPreview);
     });
 
-    // Müdürlük değiştiğinde JQL'i güncelle
+    // Md. değiştiğinde JQL'i güncelle
     if (mudurlukInput) {
         mudurlukInput.addEventListener('change', buildJqlPreview);
     }
@@ -169,6 +183,12 @@
         if (!statusChangedStartInput.value) statusChangedStartInput.value = toIso(firstDay);
         if (!statusChangedEndInput.value)   statusChangedEndInput.value   = toIso(lastDay);
     })();
+
+    // Sayfa yüklenince kayıtlı token varsa doldur
+    const savedToken = localStorage.getItem('auditHub_jiraToken');
+    if (savedToken && jiraTokenInput) {
+        jiraTokenInput.value = savedToken;
+    }
 
     // Sayfa yüklenince preview'i güncelle
     buildJqlPreview();

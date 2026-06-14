@@ -9,47 +9,117 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Montserrat:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
     <link rel="stylesheet" th:href="@{/css/style.css}"/>
     <style>
-        /* Dashboard özgün stiller */
+        /* =========================================================
+           DASHBOARD STYLES
+        ========================================================= */
         .dash-tabs {
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 20px;
+            gap: 5px;
+            margin-bottom: 12px;
+            flex-shrink: 0;
         }
         .dash-tab-btn {
-            padding: 7px 14px;
+            padding: 5px 11px;
             border: 1.5px solid #c8d6e5;
-            border-radius: 6px;
+            border-radius: 20px;
             background: #f8fafc;
-            color: #334155;
-            font-size: 12px;
+            color: #475569;
+            font-size: 11.5px;
             font-weight: 500;
             cursor: pointer;
             transition: all .15s;
             white-space: nowrap;
+            letter-spacing: .01em;
         }
         .dash-tab-btn:hover  { background: #e8f0fe; border-color: #3b82f6; color: #1d4ed8; }
-        .dash-tab-btn.active { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+        .dash-tab-btn.active { background: #1d4ed8; border-color: #1d4ed8; color: #fff; font-weight: 600; }
 
         .dash-panel { display: none; }
         .dash-panel.active { display: block; }
 
+        /* Panel header */
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+        .panel-title { font-size: 16px; font-weight: 700; color: #1e3a5f; }
+        .panel-meta { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+        .btn-dash-export {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 16px;
+            background: #059669;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background .15s;
+            white-space: nowrap;
+        }
+        .btn-dash-export:hover { background: #047857; color: #fff; text-decoration: none; }
+
+        /* Summary badges */
+        .summary-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+        .summary-card {
+            flex: 1; min-width: 120px;
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 7px 14px;
+            text-align: center;
+        }
+        .summary-card .sc-val { font-size: 19px; font-weight: 700; color: #1e3a5f; }
+        .summary-card .sc-lbl { font-size: 11px; color: #64748b; margin-top: 1px; }
+        .summary-card.pct-green  { border-color: #86efac; background: #f0fdf4; }
+        .summary-card.pct-yellow { border-color: #fde68a; background: #fffbeb; }
+        .summary-card.pct-red    { border-color: #fca5a5; background: #fef2f2; }
+        .summary-card.pct-green  .sc-val { color: #15803d; }
+        .summary-card.pct-yellow .sc-val { color: #b45309; }
+        .summary-card.pct-red    .sc-val { color: #b91c1c; }
+
+        /* Main table */
         .dash-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
+            font-size: 12.5px;
         }
         .dash-table th {
             background: #1e3a5f;
             color: #fff;
-            padding: 9px 10px;
+            padding: 8px 8px;
             text-align: center;
             font-weight: 600;
             white-space: nowrap;
         }
-        .dash-table th.col-ay { background: #152e4d; text-align: left; }
+        .dash-table th.col-ay { background: #152e4d; text-align: left; min-width: 60px; }
+        .dash-table th.grp-fmt { background: #1a4971; }
+        .dash-table th.grp-ick { background: #1a3d63; }
+        .dash-table th.col-pct { background: #0f2d4a; font-style: italic; }
+
+        .dash-table-wrapper {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
         .dash-table td {
-            padding: 8px 10px;
+            padding: 7px 8px;
             border-bottom: 1px solid #e2e8f0;
             text-align: center;
             color: #334155;
@@ -60,96 +130,117 @@
             color: #1e3a5f;
             background: #f1f5f9;
         }
-        .dash-table tr:hover td { background: #f0f7ff; }
+        .dash-table tr:hover td:not(.col-pct-cell) { background: #f0f7ff; }
+        .dash-table tr:hover td.col-ay { background: #e0eeff; }
         .dash-table tr.avg-row td {
             background: #fef9c3 !important;
             font-weight: 700;
             color: #78350f;
+            border-top: 2px solid #fbbf24;
         }
         .dash-table tr.avg-row td.col-ay { background: #fef08a !important; }
-        .dash-table td.empty { color: #94a3b8; font-style: italic; }
+        .dash-table td.empty { color: #cbd5e1; }
 
-        .badge-uygun   { color: #15803d; font-weight: 600; }
-        .badge-ud      { color: #b91c1c; font-weight: 600; }
-        .badge-hesap   { color: #b45309; font-weight: 600; }
-        .badge-bta     { color: #6d28d9; font-weight: 700; }
-        .badge-total   { color: #1e40af; font-weight: 700; font-size: 14px; }
+        /* Editable cells */
+        .editable {
+            display: inline-block;
+            min-width: 32px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            border: 1.5px solid transparent;
+            outline: none;
+            cursor: text;
+            transition: border-color .15s, background .15s;
+        }
+        .editable:hover   { border-color: #93c5fd; background: #eff6ff; }
+        .editable:focus   { border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+        .editable.saved   { border-color: #86efac; background: #f0fdf4; }
+        .editable.error   { border-color: #fca5a5; background: #fef2f2; }
+
+        /* Percentage badges in table */
+        .col-pct-cell { background: #f8fafc; }
+        .pct-badge {
+            display: inline-block;
+            padding: 2px 7px;
+            border-radius: 12px;
+            font-size: 11.5px;
+            font-weight: 700;
+        }
+        .pct-green  { background: #dcfce7; color: #15803d; }
+        .pct-yellow { background: #fef9c3; color: #92400e; }
+        .pct-red    { background: #fee2e2; color: #b91c1c; }
+        .pct-none   { color: #94a3b8; font-style: italic; font-weight: 400; font-size: 11px; }
 
         .no-data-msg {
-            padding: 32px;
+            padding: 36px 24px;
             text-align: center;
             color: #94a3b8;
             font-style: italic;
             background: #f8fafc;
-            border-radius: 8px;
-            border: 1.5px dashed #cbd5e1;
-        }
-
-        .dash-legend {
-            display: flex;
-            gap: 18px;
-            flex-wrap: wrap;
-            margin-bottom: 16px;
-            font-size: 12px;
-        }
-        .dash-legend span { display: flex; align-items: center; gap: 4px; }
-
-        .import-bar {
-            background: #f1f5f9;
-            border: 1.5px solid #cbd5e1;
             border-radius: 10px;
-            padding: 16px 20px;
-            margin-bottom: 22px;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: flex-end;
-            gap: 12px;
+            border: 1.5px dashed #cbd5e1;
+            font-size: 13px;
+        }
+
+        /* Import section */
+        .import-section {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 16px;
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+        .import-title {
+            font-size: 13px; font-weight: 700; color: #1e3a5f; margin-bottom: 8px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .import-bar {
+            display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px;
         }
         .import-bar label { font-size: 12px; font-weight: 600; color: #334155; display: block; margin-bottom: 4px; }
         .import-bar select, .import-bar input[type=month], .import-bar input[type=file] {
-            border: 1.5px solid #cbd5e1;
-            border-radius: 6px;
-            padding: 7px 10px;
-            font-size: 13px;
-            background: #fff;
-            color: #334155;
-            outline: none;
+            border: 1.5px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;
+            font-size: 12.5px; background: #fff; color: #334155; outline: none;
         }
         .import-bar select:focus, .import-bar input:focus { border-color: #3b82f6; }
-        .import-bar .btn-import {
-            padding: 8px 22px;
-            background: #1d4ed8;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
+        .btn-import {
+            padding: 7px 20px; background: #1d4ed8; color: #fff;
+            border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
         }
-        .import-bar .btn-import:hover { background: #1e40af; }
-        .import-title { font-size: 13px; font-weight: 700; color: #1e3a5f; margin-bottom: 12px; }
+        .btn-import:hover { background: #1e40af; }
+
         .alert-success { background: #dcfce7; border: 1px solid #86efac; color: #166534; border-radius: 6px; padding: 10px 16px; margin-bottom: 14px; font-size: 13px; }
         .alert-error   { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; border-radius: 6px; padding: 10px 16px; margin-bottom: 14px; font-size: 13px; }
+
+        .save-status {
+            font-size: 11px; color: #64748b; margin-top: 6px; min-height: 16px;
+            text-align: right;
+        }
     </style>
 </head>
 <body>
 <div class="page-wrapper">
 
     <!-- ===== SOL SIDEBAR DOCK ===== -->
-    <nav class="side-dock">
+    <nav class="side-dock" id="sideDock">
         <div class="dock-brand">
             <div class="dock-logo-icon">
                 <img src="/img/thy-logo.png" alt="THY" class="dock-logo-img"
                      onerror="this.onerror=null;this.src='/img/thy-logo.svg';"/>
             </div>
-            <div>
+            <div class="dock-brand-text">
                 <div class="dock-title">AuditHub</div>
                 <div class="dock-subtitle">Jira Export</div>
             </div>
+            <button class="dock-toggle-btn" id="sidebarToggleBtn" onclick="toggleSidebar()" title="Menüyü aç/kapat">&#8250;</button>
         </div>
         <ul class="dock-nav">
             <li class="dock-nav-item">
-                <a href="/" style="color:inherit;text-decoration:none;">&#8592; Filtrelere Dön</a>
+                <a href="/" style="color:inherit;text-decoration:none;">
+                    <span class="nav-icon">&#8592;</span>
+                    <span class="nav-label">Filtrelere Dön</span>
+                </a>
             </li>
         </ul>
         <div class="dock-footer">AuditHub &copy; 2026</div>
@@ -162,43 +253,33 @@
             <div>
                 <h1 class="content-title">Dashboard 2026</h1>
                 <p class="content-subtitle">
-                    Müdürlük bazlı aylık audit istatistikleri.
-                    Veriler, Excel export yapıldığında otomatik güncellenir.
+                    Md. bazlı aylık audit istatistikleri — hücrelere tıklayarak düzenleyebilirsiniz.
                 </p>
             </div>
         </header>
 
-        <!-- Açıklama -->
-        <div class="dash-legend">
-            <span><strong>Toplam</strong> = Audit'e gönderilen task sayısı</span>
-            <span><span class="badge-uygun">✓</span> = Uygun</span>
-            <span><span class="badge-ud">✗</span> = Uygun Değil</span>
-            <span><span class="badge-hesap">?</span> = Hesaplanamaz</span>
-            <span><span class="badge-bta">BTA</span> = Back to Analysis toplam sayısı</span>
-        </div>
+        <!-- Alerts -->
+        <div th:if="${importMsg}" class="alert-success" th:text="${importMsg}"></div>
+        <div th:if="${importErr}" class="alert-error"   th:text="${importErr}"></div>
 
-        <!-- Excel Import Formu -->
-        <div style="margin-bottom:18px;">
+        <!-- Excel Import -->
+        <div class="import-section">
             <div class="import-title">&#8659; Geçmiş Dönem Excel Yükle</div>
-
-            <div th:if="${importMsg}" class="alert-success" th:text="${importMsg}"></div>
-            <div th:if="${importErr}" class="alert-error" th:text="${importErr}"></div>
-
             <form th:action="@{/import-dashboard}" method="post" enctype="multipart/form-data">
                 <div class="import-bar">
                     <div>
-                        <label>Müdürlük</label>
+                        <label>Md.</label>
                         <select name="mudurluk" required>
                             <option th:each="m : ${mudurlukler}" th:value="${m}" th:text="${m}"></option>
                         </select>
                     </div>
                     <div>
                         <label>Yıl / Ay</label>
-                        <input type="month" name="yearMonth" value="2026-01" required />
+                        <input type="month" name="yearMonth" value="2026-01" required/>
                     </div>
                     <div>
                         <label>Excel Dosyası (.xlsx)</label>
-                        <input type="file" name="file" accept=".xlsx" required />
+                        <input type="file" name="file" accept=".xlsx" required/>
                     </div>
                     <div>
                         <button type="submit" class="btn-import">&#8679; Yükle &amp; Kaydet</button>
@@ -207,7 +288,7 @@
             </form>
         </div>
 
-        <!-- Müdürlük Sekmeleri -->
+        <!-- Md. Sekmeleri -->
         <div class="dash-tabs" id="dashTabs">
             <button th:each="s, i : ${stats}"
                     th:text="${s.name}"
@@ -217,81 +298,174 @@
             </button>
         </div>
 
-        <!-- Müdürlük Panelleri -->
+        <!-- Md. Panelleri -->
         <div th:each="s, si : ${stats}"
              th:id="'panel-' + ${si.index}"
              th:class="${si.index == 0} ? 'dash-panel active' : 'dash-panel'">
 
+            <!-- Panel header -->
+            <div class="panel-header">
+                <div>
+                    <div class="panel-title" th:text="${s.name}"></div>
+                    <div class="panel-meta" th:if="${s.average != null}">
+                        Veri bulunan ay sayısı: <strong th:text="${s.dataCount}"></strong>
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;" th:if="${s.average != null}">
+                    <button type="button"
+                            class="btn-dash-export btn-copy-3months"
+                            style="background:#2563eb;"
+                            th:attr="data-mudurluk=${s.name}">
+                        &#128203; Son 3 Ayı Kopyala
+                    </button>
+                    <a th:href="@{/dashboard/export-excel(mudurluk=${s.name})}"
+                       class="btn-dash-export">
+                        &#11015; Excel İndir
+                    </a>
+                </div>
+            </div>
+
+            <!-- Summary cards -->
+            <div class="summary-row" th:if="${s.average != null}">
+                <div class="summary-card">
+                    <div class="sc-val" th:text="${s.average.totalTasks}"></div>
+                    <div class="sc-lbl">Ort. Toplam Task</div>
+                </div>
+                <div th:classappend="${s.formatUygunPercent >= 80 ? ' pct-green' : (s.formatUygunPercent >= 60 ? ' pct-yellow' : ' pct-red')}"
+                     class="summary-card">
+                    <div class="sc-val" th:text="${#numbers.formatDecimal(s.formatUygunPercent,1,1) + '%'}"></div>
+                    <div class="sc-lbl">Format Uygunluk %</div>
+                </div>
+                <div th:classappend="${s.icerikUygunPercent >= 80 ? ' pct-green' : (s.icerikUygunPercent >= 60 ? ' pct-yellow' : ' pct-red')}"
+                     class="summary-card">
+                    <div class="sc-val" th:text="${#numbers.formatDecimal(s.icerikUygunPercent,1,1) + '%'}"></div>
+                    <div class="sc-lbl">İçerik Uygunluk %</div>
+                </div>
+                <div class="summary-card">
+                    <div class="sc-val" th:text="${s.average.btaCount}"></div>
+                    <div class="sc-lbl">Ort. BTA Sayısı</div>
+                </div>
+            </div>
+
             <!-- Veri yok mesajı -->
-            <div class="no-data-msg"
-                 th:if="${s.average == null}">
-                Henüz bu müdürlük için export yapılmamış.
-                Ana sayfadan sorguyu çalıştırıp Excel İndir butonuna basarak veri ekleyebilirsiniz.
+            <div class="no-data-msg" th:if="${s.average == null}">
+                Henüz bu müdürlük için veri girilmemiş.<br/>
+                Yukarıdaki formdan Excel yükleyebilir veya sonuç sayfasından dışa aktarabilirsiniz.
             </div>
 
             <!-- Tablo -->
-            <div th:if="${s.average != null}" style="overflow-x:auto;">
-                <table class="dash-table">
+            <div th:if="${s.average != null}" class="dash-table-wrapper">
+                <div class="save-status" id="saveStatus"></div>
+                <table class="dash-table"
+                       th:attr="data-mudurluk=${s.name}">
                     <thead>
                         <tr>
                             <th class="col-ay" rowspan="2">Ay</th>
                             <th rowspan="2">Toplam<br/>Task</th>
-                            <th colspan="3" class="col-group-header">Analiz Format Uygunluk</th>
-                            <th colspan="3" class="col-group-header">Analiz İçerik Olgunluk</th>
-                            <th rowspan="2">BTA<br/>Sayısı</th>
+                            <th colspan="4" class="grp-fmt">Analiz Format Uygunluk</th>
+                            <th colspan="4" class="grp-ick">Analiz İçerik Olgunluk</th>
+                            <th rowspan="2">BTA</th>
                         </tr>
                         <tr>
-                            <th class="badge-uygun" style="background:#1a3a4d;">Uygun</th>
-                            <th class="badge-ud"    style="background:#1a3a4d;">Uygun Değil</th>
-                            <th class="badge-hesap" style="background:#1a3a4d;">Hesaplanamaz</th>
-                            <th class="badge-uygun" style="background:#1a3a4d;">Uygun</th>
-                            <th class="badge-ud"    style="background:#1a3a4d;">Uygun Değil</th>
-                            <th class="badge-hesap" style="background:#1a3a4d;">Hesaplanamaz</th>
+                            <th class="grp-fmt">Uygun</th>
+                            <th class="grp-fmt">Uygun Değil</th>
+                            <th class="grp-fmt">Hesap.</th>
+                            <th class="col-pct grp-fmt">%</th>
+                            <th class="grp-ick">Uygun</th>
+                            <th class="grp-ick">Uygun Değil</th>
+                            <th class="grp-ick">Hesap.</th>
+                            <th class="col-pct grp-ick">%</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- 12 aylık satırlar -->
                         <tr th:each="entry, ei : ${s.monthEntries}">
                             <td class="col-ay" th:text="${monthLabels[ei.index]}"></td>
-                            <!-- Veri varsa doldur, yoksa çizgi -->
                             <th:block th:if="${entry != null}">
-                                <td><span class="editable" th:text="${entry.totalTasks}" contenteditable="true"></span></td>
-                                <td><span class="editable" th:text="${entry.formatUygun}" contenteditable="true"></span></td>
-                                <td><span class="editable" th:text="${entry.formatUygunDegil}" contenteditable="true"></span></td>
-                                <td><span class="editable" th:text="${entry.formatHesap}" contenteditable="true"></span></td>
-                                <td><span class="editable" th:text="${entry.icerikUygun}" contenteditable="true"></span></td>
-                                <td><span class="editable" th:text="${entry.icerikUygunDegil}" contenteditable="true"></span></td>
-                                <td><span class="editable" th:text="${entry.icerikHesap}" contenteditable="true"></span></td>
-                                <td><span class="editable" th:text="${entry.btaCount}" contenteditable="true"></span></td>
+                                <td><span class="editable"
+                                         contenteditable="true"
+                                         th:text="${entry.totalTasks}"
+                                         th:attr="data-mudurluk=${s.name},data-year-month=${entry.yearMonth},data-field='totalTasks'"></span></td>
+                                <td><span class="editable"
+                                         contenteditable="true"
+                                         th:text="${entry.formatUygun}"
+                                         th:attr="data-mudurluk=${s.name},data-year-month=${entry.yearMonth},data-field='formatUygun'"></span></td>
+                                <td><span class="editable"
+                                         contenteditable="true"
+                                         th:text="${entry.formatUygunDegil}"
+                                         th:attr="data-mudurluk=${s.name},data-year-month=${entry.yearMonth},data-field='formatUygunDegil'"></span></td>
+                                <td><span class="editable"
+                                         contenteditable="true"
+                                         th:text="${entry.formatHesap}"
+                                         th:attr="data-mudurluk=${s.name},data-year-month=${entry.yearMonth},data-field='formatHesap'"></span></td>
+                                <td class="col-pct-cell"><span class="pct-badge pct-none" data-pct-fmt>—</span></td>
+                                <td><span class="editable"
+                                         contenteditable="true"
+                                         th:text="${entry.icerikUygun}"
+                                         th:attr="data-mudurluk=${s.name},data-year-month=${entry.yearMonth},data-field='icerikUygun'"></span></td>
+                                <td><span class="editable"
+                                         contenteditable="true"
+                                         th:text="${entry.icerikUygunDegil}"
+                                         th:attr="data-mudurluk=${s.name},data-year-month=${entry.yearMonth},data-field='icerikUygunDegil'"></span></td>
+                                <td><span class="editable"
+                                         contenteditable="true"
+                                         th:text="${entry.icerikHesap}"
+                                         th:attr="data-mudurluk=${s.name},data-year-month=${entry.yearMonth},data-field='icerikHesap'"></span></td>
+                                <td class="col-pct-cell"><span class="pct-badge pct-none" data-pct-ick>—</span></td>
+                                <td><span class="editable"
+                                         contenteditable="true"
+                                         th:text="${entry.btaCount}"
+                                         th:attr="data-mudurluk=${s.name},data-year-month=${entry.yearMonth},data-field='btaCount'"></span></td>
                             </th:block>
                             <th:block th:if="${entry == null}">
-                                <td class="empty">—</td>
-                                <td class="empty">—</td>
-                                <td class="empty">—</td>
-                                <td class="empty">—</td>
-                                <td class="empty">—</td>
-                                <td class="empty">—</td>
-                                <td class="empty">—</td>
-                                <td class="empty">—</td>
+                                <td><span class="editable"
+                                         contenteditable="true"
+                                         th:attr="data-mudurluk=${s.name},data-year-month=${months[ei.index]},data-field='totalTasks'">0</span></td>
+                                <td><span class="editable"
+                                         contenteditable="true"
+                                         th:attr="data-mudurluk=${s.name},data-year-month=${months[ei.index]},data-field='formatUygun'">0</span></td>
+                                <td><span class="editable"
+                                         contenteditable="true"
+                                         th:attr="data-mudurluk=${s.name},data-year-month=${months[ei.index]},data-field='formatUygunDegil'">0</span></td>
+                                <td><span class="editable"
+                                         contenteditable="true"
+                                         th:attr="data-mudurluk=${s.name},data-year-month=${months[ei.index]},data-field='formatHesap'">0</span></td>
+                                <td class="col-pct-cell"><span class="pct-badge pct-none" data-pct-fmt>—</span></td>
+                                <td><span class="editable"
+                                         contenteditable="true"
+                                         th:attr="data-mudurluk=${s.name},data-year-month=${months[ei.index]},data-field='icerikUygun'">0</span></td>
+                                <td><span class="editable"
+                                         contenteditable="true"
+                                         th:attr="data-mudurluk=${s.name},data-year-month=${months[ei.index]},data-field='icerikUygunDegil'">0</span></td>
+                                <td><span class="editable"
+                                         contenteditable="true"
+                                         th:attr="data-mudurluk=${s.name},data-year-month=${months[ei.index]},data-field='icerikHesap'">0</span></td>
+                                <td class="col-pct-cell"><span class="pct-badge pct-none" data-pct-ick>—</span></td>
+                                <td><span class="editable"
+                                         contenteditable="true"
+                                         th:attr="data-mudurluk=${s.name},data-year-month=${months[ei.index]},data-field='btaCount'">0</span></td>
                             </th:block>
                         </tr>
 
-                        <!-- 2026 Ortalama satırı -->
+                        <!-- Ortalama satırı -->
                         <tr class="avg-row">
                             <td class="col-ay">2026 Ort.</td>
                             <td th:text="${s.average.totalTasks}"></td>
-                            <td>
-                                <span th:text="${s.average.formatUygun}"></span>
-                                <span class="metric-percent" th:text="${#numbers.formatDecimal(s.formatUygunPercent, 1, 0) + '%'}"></span>
-                            </td>
+                            <td th:text="${s.average.formatUygun}"></td>
                             <td th:text="${s.average.formatUygunDegil}"></td>
                             <td th:text="${s.average.formatHesap}"></td>
-                            <td>
-                                <span th:text="${s.average.icerikUygun}"></span>
-                                <span class="metric-percent" th:text="${#numbers.formatDecimal(s.icerikUygunPercent, 1, 0) + '%'}"></span>
+                            <td class="col-pct-cell">
+                                <span th:classappend="${s.formatUygunPercent >= 80 ? ' pct-green' : (s.formatUygunPercent >= 60 ? ' pct-yellow' : ' pct-red')}"
+                                      class="pct-badge"
+                                      th:text="${#numbers.formatDecimal(s.formatUygunPercent,1,1) + '%'}"></span>
                             </td>
+                            <td th:text="${s.average.icerikUygun}"></td>
                             <td th:text="${s.average.icerikUygunDegil}"></td>
                             <td th:text="${s.average.icerikHesap}"></td>
+                            <td class="col-pct-cell">
+                                <span th:classappend="${s.icerikUygunPercent >= 80 ? ' pct-green' : (s.icerikUygunPercent >= 60 ? ' pct-yellow' : ' pct-red')}"
+                                      class="pct-badge"
+                                      th:text="${#numbers.formatDecimal(s.icerikUygunPercent,1,1) + '%'}"></span>
+                            </td>
                             <td th:text="${s.average.btaCount}"></td>
                         </tr>
                     </tbody>
@@ -302,7 +476,13 @@
     </main>
 </div>
 
+<script th:inline="javascript">
+    var ALL_MONTHS = /*[[${months}]]*/ ['2026-01'];
+</script>
 <script>
+    /* ============================================================
+       TAB NAVİGASYON
+    ============================================================ */
     function showPanel(idx) {
         document.querySelectorAll('.dash-panel').forEach(function(p) { p.classList.remove('active'); });
         document.querySelectorAll('.dash-tab-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -310,24 +490,236 @@
         document.querySelectorAll('.dash-tab-btn')[idx].classList.add('active');
     }
 
-    // Editable cells: Blur event'i sırasında save'i serverside yap
-    document.addEventListener('blur', function(e) {
-        if (e.target.classList.contains('editable')) {
-            const cell = e.target;
-            const mudurluk = cell.getAttribute('data-mudurluk');
-            const yearMonth = cell.getAttribute('data-year-month');
-            const field = cell.getAttribute('data-field');
-            const newValue = cell.textContent.trim();
+    /* ============================================================
+       SIDEBAR
+    ============================================================ */
+    function toggleSidebar() {
+        var dock = document.getElementById('sideDock');
+        var btn  = document.getElementById('sidebarToggleBtn');
+        var collapsed = dock.classList.toggle('side-dock--collapsed');
+        btn.innerHTML = collapsed ? '&#8250;' : '&#8249;';
+    }
 
-            if (mudurluk && yearMonth && field && newValue) {
-                fetch('/dashboard/save-cell', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `mudurluk=${encodeURIComponent(mudurluk)}&yearMonth=${encodeURIComponent(yearMonth)}&field=${encodeURIComponent(field)}&value=${encodeURIComponent(newValue)}`
-                }).catch(err => console.error('Kaydetme başarısız:', err));
+    /* ============================================================
+       YÜZDE HESAPLAMA
+    ============================================================ */
+    function pctClass(pct) {
+        if (isNaN(pct)) return 'pct-none';
+        if (pct >= 80)  return 'pct-green';
+        if (pct >= 60)  return 'pct-yellow';
+        return 'pct-red';
+    }
+
+    function updateRowPct(tr) {
+        var total = parseInt(getEditableVal(tr, 'totalTasks'),  10);
+        var fu    = parseInt(getEditableVal(tr, 'formatUygun'), 10);
+        var iu    = parseInt(getEditableVal(tr, 'icerikUygun'), 10);
+
+        var fBadge = tr.querySelector('[data-pct-fmt]');
+        var iBadge = tr.querySelector('[data-pct-ick]');
+
+        if (fBadge) {
+            if (!isNaN(total) && total > 0 && !isNaN(fu)) {
+                var fPct = (fu / total * 100);
+                fBadge.textContent = fPct.toFixed(1) + '%';
+                fBadge.className = 'pct-badge ' + pctClass(fPct);
+            } else {
+                fBadge.textContent = '—';
+                fBadge.className = 'pct-badge pct-none';
             }
         }
+        if (iBadge) {
+            if (!isNaN(total) && total > 0 && !isNaN(iu)) {
+                var iPct = (iu / total * 100);
+                iBadge.textContent = iPct.toFixed(1) + '%';
+                iBadge.className = 'pct-badge ' + pctClass(iPct);
+            } else {
+                iBadge.textContent = '—';
+                iBadge.className = 'pct-badge pct-none';
+            }
+        }
+    }
+
+    function getEditableVal(tr, field) {
+        var span = tr.querySelector('[data-field="' + field + '"]');
+        return span ? span.textContent.trim() : '';
+    }
+
+    function initPcts() {
+        document.querySelectorAll('.dash-table tbody tr:not(.avg-row)').forEach(updateRowPct);
+    }
+
+    /* ============================================================
+       EDITABLE CELLS
+    ============================================================ */
+    // Numeric-only: sadece 0-9 ve silme tuşlarına izin ver
+    document.addEventListener('keydown', function(e) {
+        if (!e.target.classList.contains('editable')) return;
+        var allowed = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Enter','Home','End'];
+        if (allowed.indexOf(e.key) !== -1) return;
+        if (e.key >= '0' && e.key <= '9') return;
+        e.preventDefault();
+    }, false);
+
+    // Enter → blur (kaydetmeyi tetikler)
+    document.addEventListener('keydown', function(e) {
+        if (e.target.classList.contains('editable') && e.key === 'Enter') {
+            e.preventDefault();
+            e.target.blur();
+        }
+    }, false);
+
+    var saveTimer = null;
+    document.addEventListener('blur', function(e) {
+        if (!e.target.classList.contains('editable')) return;
+        var span = e.target;
+
+        // Sadece rakam bırak
+        var val = span.textContent.replace(/\D/g, '');
+        if (val === '') val = '0';
+        span.textContent = val;
+
+        // Satır yüzdelerini güncelle
+        var tr = span.closest('tr');
+        if (tr) updateRowPct(tr);
+
+        var mudurluk  = span.getAttribute('data-mudurluk');
+        var yearMonth = span.getAttribute('data-year-month');
+        var field     = span.getAttribute('data-field');
+
+        if (!mudurluk || !yearMonth || !field) return;
+
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(function() {
+            fetch('/dashboard/save-cell', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'mudurluk=' + encodeURIComponent(mudurluk)
+                    + '&yearMonth=' + encodeURIComponent(yearMonth)
+                    + '&field='     + encodeURIComponent(field)
+                    + '&value='     + encodeURIComponent(val)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var status = document.getElementById('saveStatus');
+                if (data.success) {
+                    span.classList.add('saved');
+                    setTimeout(function() { span.classList.remove('saved'); }, 1400);
+                    if (status) { status.textContent = '✓ Kaydedildi'; status.style.color = '#15803d'; }
+                } else {
+                    span.classList.add('error');
+                    setTimeout(function() { span.classList.remove('error'); }, 2500);
+                    if (status) { status.textContent = '✗ Kaydetme başarısız: ' + data.message; status.style.color = '#b91c1c'; }
+                }
+                if (status) setTimeout(function() { if (status) status.textContent = ''; }, 4000);
+            })
+            .catch(function(err) { console.error('Save error:', err); });
+        }, 200);
     }, true);
+
+    /* ============================================================
+       SON 3 AYI KOPYALA (bulunduğumuz ay hariç)
+    ============================================================ */
+    var FULL_MONTH_NAMES = {
+        '01': 'Ocak', '02': 'Şubat', '03': 'Mart', '04': 'Nisan',
+        '05': 'Mayıs', '06': 'Haziran', '07': 'Temmuz', '08': 'Ağustos',
+        '09': 'Eylül', '10': 'Ekim', '11': 'Kasım', '12': 'Aralık'
+    };
+
+    function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+
+    function buildLast3MonthsText(panel, mudurluk) {
+        var now = new Date();
+        var currentYearMonth = now.getFullYear() + '-' + pad2(now.getMonth() + 1);
+        var currentIndex = ALL_MONTHS.indexOf(currentYearMonth);
+        if (currentIndex === -1) currentIndex = ALL_MONTHS.length;
+
+        var targetIndices = [];
+        for (var i = currentIndex - 3; i < currentIndex; i++) {
+            if (i >= 0) targetIndices.push(i);
+        }
+
+        var rows = panel.querySelectorAll('.dash-table tbody tr:not(.avg-row)');
+        var lines = [mudurluk + ' — Son 3 Ay Özeti', ''];
+
+        targetIndices.forEach(function(idx) {
+            var tr = rows[idx];
+            if (!tr) return;
+            var ymParts  = ALL_MONTHS[idx].split('-');
+            var monthName = (FULL_MONTH_NAMES[ymParts[1]] || ymParts[1]) + ' ' + ymParts[0];
+
+            var total = getEditableVal(tr, 'totalTasks');
+            var fu    = getEditableVal(tr, 'formatUygun');
+            var fud   = getEditableVal(tr, 'formatUygunDegil');
+            var fh    = getEditableVal(tr, 'formatHesap');
+            var iu    = getEditableVal(tr, 'icerikUygun');
+            var iud   = getEditableVal(tr, 'icerikUygunDegil');
+            var ih    = getEditableVal(tr, 'icerikHesap');
+            var bta   = getEditableVal(tr, 'btaCount');
+
+            var fPctEl = tr.querySelector('[data-pct-fmt]');
+            var iPctEl = tr.querySelector('[data-pct-ick]');
+            var fPct = fPctEl ? fPctEl.textContent.trim() : '—';
+            var iPct = iPctEl ? iPctEl.textContent.trim() : '—';
+
+            lines.push(monthName + ':');
+            lines.push('  Toplam Task: ' + total);
+            lines.push('  Analiz Format Uygunluk -> Uygun: ' + fu + ' | Uygun Değil: ' + fud + ' | Hesaplanamaz: ' + fh + ' | %: ' + fPct);
+            lines.push('  Analiz İçerik Olgunluk -> Uygun: ' + iu + ' | Uygun Değil: ' + iud + ' | Hesaplanamaz: ' + ih + ' | %: ' + iPct);
+            lines.push('  BTA: ' + bta);
+            lines.push('');
+        });
+
+        return lines.join('\n').trim();
+    }
+
+    function copyLast3Months(btn) {
+        var panel    = btn.closest('.dash-panel');
+        var mudurluk = btn.getAttribute('data-mudurluk');
+        var text     = buildLast3MonthsText(panel, mudurluk);
+        var status   = panel.querySelector('#saveStatus');
+
+        function showFeedback(msg, color) {
+            if (!status) return;
+            status.textContent = msg;
+            status.style.color = color;
+            setTimeout(function() { status.textContent = ''; }, 3000);
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text)
+                .then(function() { showFeedback('✓ Son 3 ay panoya kopyalandı', '#15803d'); })
+                .catch(function() { showFeedback('✗ Kopyalama başarısız', '#b91c1c'); });
+        } else {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                showFeedback('✓ Son 3 ay panoya kopyalandı', '#15803d');
+            } catch (e) {
+                showFeedback('✗ Kopyalama başarısız', '#b91c1c');
+            }
+            document.body.removeChild(ta);
+        }
+    }
+
+    function initCopyButtons() {
+        document.querySelectorAll('.btn-copy-3months').forEach(function(btn) {
+            btn.addEventListener('click', function() { copyLast3Months(btn); });
+        });
+    }
+
+    /* ============================================================
+       INIT
+    ============================================================ */
+    document.addEventListener('DOMContentLoaded', function() {
+        initPcts();
+        initCopyButtons();
+    });
 </script>
 </body>
 </html>

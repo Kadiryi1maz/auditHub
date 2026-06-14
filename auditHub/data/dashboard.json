@@ -11,7 +11,19 @@
   "btaCount" : 0,
   "lastUpdated" : "09.06.2026 10:45"
 }, {
-  "mudurluk" : "Doğrudan Satış Çözümleri Md.",
+  "mudurluk" : "Rezervasyon & Biletleme Md.",
+  "yearMonth" : "2026-01",
+  "totalTasks" : 0,
+  "formatUygun" : 0,
+  "formatUygunDegil" : 0,
+  "formatHesap" : 0,
+  "icerikUygun" : 0,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "12.06.2026 15:07"
+}, {
+  "mudurluk" : "Doğrudan Satış Çöz. Md.",
   "yearMonth" : "2026-01",
   "totalTasks" : 27,
   "formatUygun" : 0,
@@ -35,6 +47,30 @@
   "btaCount" : 1,
   "lastUpdated" : "08.06.2026 16:57"
 }, {
+  "mudurluk" : "Gelir Yönetimi ve Ücret Çöz. Md.",
+  "yearMonth" : "2026-06",
+  "totalTasks" : 18,
+  "formatUygun" : 1,
+  "formatUygunDegil" : 0,
+  "formatHesap" : 0,
+  "icerikUygun" : 0,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "09.06.2026 16:12"
+}, {
+  "mudurluk" : "Rezervasyon & Biletleme Md.",
+  "yearMonth" : "2026-06",
+  "totalTasks" : 11,
+  "formatUygun" : 1,
+  "formatUygunDegil" : 0,
+  "formatHesap" : 0,
+  "icerikUygun" : 1,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "12.06.2026 15:05"
+}, {
   "mudurluk" : "Rezervasyon & Biletleme Md.",
   "yearMonth" : "2026-05",
   "totalTasks" : 8,
@@ -47,17 +83,17 @@
   "btaCount" : 0,
   "lastUpdated" : "09.06.2026 10:30"
 }, {
-  "mudurluk" : "Gelir Yönetimi ve Ücret Çözümleri Md.",
-  "yearMonth" : "2026-06",
-  "totalTasks" : 18,
-  "formatUygun" : 1,
+  "mudurluk" : "Açık Sistem Çöz. Md.",
+  "yearMonth" : "2026-02",
+  "totalTasks" : 0,
+  "formatUygun" : 0,
   "formatUygunDegil" : 0,
   "formatHesap" : 0,
   "icerikUygun" : 0,
   "icerikUygunDegil" : 0,
   "icerikHesap" : 0,
   "btaCount" : 0,
-  "lastUpdated" : "09.06.2026 16:12"
+  "lastUpdated" : "10.06.2026 01:40"
 }, {
   "mudurluk" : "Açık Sistem Çöz. Md.",
   "yearMonth" : "2026-05",

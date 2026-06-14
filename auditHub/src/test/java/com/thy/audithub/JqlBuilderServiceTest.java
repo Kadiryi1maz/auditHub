@@ -37,10 +37,10 @@ class JqlBuilderServiceTest {
         String jql = jqlBuilderService.build(filter);
 
         assertThat(jql).isEqualTo(
-                "issuetype in (Story, Task)"
+                "issuetype in (\"Story\", \"Task\")"
                 + " AND created >= \"2025-05-01\""
                 + " AND project in (\"FTBASM\", \"MSS\", \"MES\")"
-                + " AND status changed to (Done, Closed)"
+                + " AND status changed to (\"Done\", \"Closed\")"
                 + " during (\"2026-04-01\", \"2026-04-27\")"
         );
     }
@@ -56,7 +56,7 @@ class JqlBuilderServiceTest {
 
         String jql = jqlBuilderService.build(filter);
 
-        assertThat(jql).contains("issuetype in (Bug)");
+        assertThat(jql).contains("issuetype in (\"Bug\")");
     }
 
     // -----------------------------------------------------------------------
@@ -70,7 +70,7 @@ class JqlBuilderServiceTest {
 
         String jql = jqlBuilderService.build(filter);
 
-        assertThat(jql).contains("issuetype in (Story, Task, Bug)");
+        assertThat(jql).contains("issuetype in (\"Story\", \"Task\", \"Bug\")");
     }
 
     // -----------------------------------------------------------------------
@@ -84,7 +84,7 @@ class JqlBuilderServiceTest {
 
         String jql = jqlBuilderService.build(filter);
 
-        assertThat(jql).contains("status changed to (Done)");
+        assertThat(jql).contains("status changed to (\"Done\")");
     }
 
     // -----------------------------------------------------------------------
@@ -98,20 +98,43 @@ class JqlBuilderServiceTest {
 
         String jql = jqlBuilderService.build(filter);
 
-        assertThat(jql).contains("status changed to (Done, Closed, Resolved)");
+        assertThat(jql).contains("status changed to (\"Done\", \"Closed\", \"Resolved\")");
     }
 
     // -----------------------------------------------------------------------
     // Test 6 — Proje adı çift tırnak içinde olmalı
     // -----------------------------------------------------------------------
     @Test
-    @DisplayName("Müdürlük seçilince doğru projeler JQL'e eklenmeli")
+    @DisplayName("Md. seçilince doğru projeler JQL'e eklenmeli")
     void shouldMapMudurluk_toProjects() {
         FilterRequest filter = buildBaseFilter();
 
         String jql = jqlBuilderService.build(filter);
 
         assertThat(jql).contains("project in (\"FTBASM\", \"MSS\", \"MES\")");
+    }
+
+    @Test
+    @DisplayName("Gelir Yönetimi için doğru proje keyleri kullanılmalı, component filtresi olmamalı")
+    void shouldMapGelirYonetimi_toCorrectProjects() {
+        FilterRequest filter = buildBaseFilter();
+        filter.setMudurluk("Gelir Yönetimi ve Ücret Çöz. Md.");
+
+        String jql = jqlBuilderService.build(filter);
+
+        assertThat(jql).contains("project in (\"PRC\", \"RMOP\", \"PTS\", \"UVYFT\", \"Cygnus\")");
+        assertThat(jql).doesNotContain("component in");
+    }
+
+    @Test
+    @DisplayName("Board filtresi standart Jira JQL'de desteklenmiyorsa eklenmemeli")
+    void shouldNotIncludeBoardClause_whenBoardFilterMappingExists() {
+        FilterRequest filter = buildBaseFilter();
+        filter.setMudurluk("Rezervasyon & Biletleme Md.");
+
+        String jql = jqlBuilderService.build(filter);
+
+        assertThat(jql).doesNotContain("board in");
     }
 
     // -----------------------------------------------------------------------

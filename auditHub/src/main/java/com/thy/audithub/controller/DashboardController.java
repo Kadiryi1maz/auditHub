@@ -6,17 +6,20 @@ import com.thy.audithub.dto.MudurlukStats;
 import com.thy.audithub.service.DashboardService;
 import com.thy.audithub.service.ExcelService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -38,14 +41,20 @@ public class DashboardController {
     private static final List<String> MUDURLUKLER = List.of(
             "Açık Sistem Çöz. Md.",
             "Rezervasyon & Biletleme Md.",
-            "Gelir Yönetimi ve Ücret Çözümleri Md.",
-            "Doğrudan Satış Çözümleri Md.",
+            "Gelir Yönetimi ve Ücret Çöz. Md.",
+            "Doğrudan Satış Çöz. Md.",
             "Dijital Yolcu Çöz Md.",
-            "DCS Çözümleri Md.",
+            "DCS Çöz. Md.",
             "Alışveriş İçerik Md.",
             "Miles&Smiles Md.",
             "Biletleme ve Ek Hizmetler Md.",
-            "Satış Sonrası ve IRROPS Md.");
+            "Satış Sonrası ve IRROPS Md.",
+            "Bağlantı ve Uçak İçi Dijital Çözümler Md.",
+            "Ajet Dijital Çöz Md.",
+            "B2b Çöz Md.",
+            "Ödeme Çöz. Md.",
+            "Miles and Smiles Çöz. Md.",
+            "Müşteri İlişkileri ve Pazarlama Çöz.Md");
 
     @GetMapping("/dashboard")
     public String dashboard(@RequestParam(required = false) String msg,
@@ -79,19 +88,19 @@ public class DashboardController {
             DashboardEntry avg = withData.isEmpty() ? null : computeAverage(withData);
             ms.setAverage(avg);
 
-            // Yüzdelik hesabı
-            if (avg != null && avg.getTotalTasks() > 0) {
-                ms.setFormatUygunPercent((avg.getFormatUygun() * 100.0) / avg.getTotalTasks());
-                ms.setIcerikUygunPercent((avg.getIcerikUygun() * 100.0) / avg.getTotalTasks());
-            } else {
-                ms.setFormatUygunPercent(0);
-                ms.setIcerikUygunPercent(0);
-            }
+            // Sum-based percentage (avoids rounding distortion from averaged integers)
+            int sumTotal = withData.stream().mapToInt(DashboardEntry::getTotalTasks).sum();
+            int sumFU = withData.stream().mapToInt(DashboardEntry::getFormatUygun).sum();
+            int sumIU = withData.stream().mapToInt(DashboardEntry::getIcerikUygun).sum();
+            ms.setFormatUygunPercent(sumTotal > 0 ? (sumFU * 100.0) / sumTotal : 0);
+            ms.setIcerikUygunPercent(sumTotal > 0 ? (sumIU * 100.0) / sumTotal : 0);
+            ms.setDataCount(withData.size());
 
             stats.add(ms);
         }
 
         model.addAttribute("stats", stats);
+        model.addAttribute("months", MONTHS);
         model.addAttribute("monthLabels", MONTH_LABELS);
         model.addAttribute("mudurlukler", MUDURLUKLER);
         if (msg != null) model.addAttribute("importMsg", msg);
@@ -133,7 +142,30 @@ public class DashboardController {
         return "redirect:/dashboard";
     }
 
+    @GetMapping("/dashboard/export-excel")
+    public ResponseEntity<byte[]> exportExcel(@RequestParam String mudurluk) throws Exception {
+        List<DashboardEntry> allEntries = dashboardService.getAll();
+        List<DashboardEntry> entries = allEntries.stream()
+                .filter(e -> mudurluk.equals(e.getMudurluk()))
+                .sorted(Comparator.comparing(DashboardEntry::getYearMonth))
+                .collect(Collectors.toList());
+
+        byte[] bytes = excelService.generateDashboardExcel(mudurluk, entries, MONTHS, MONTH_LABELS);
+
+        String filename = "dashboard_" + sanitizeName(mudurluk) + ".xlsx";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDisposition(ContentDisposition.attachment()
+                .filename(filename, StandardCharsets.UTF_8).build());
+        return ResponseEntity.ok().headers(headers).body(bytes);
+    }
+
     // -----------------------------------------------------------------------
+
+    private String sanitizeName(String name) {
+        return name.replaceAll("[^a-zA-Z0-9_\\-]", "_");
+    }
 
     private DashboardEntry computeAverage(List<DashboardEntry> entries) {
         int n = entries.size();

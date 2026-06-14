@@ -1,6 +1,7 @@
 package com.thy.audithub.service;
 
 import com.thy.audithub.config.JiraProperties;
+import com.thy.audithub.dto.DashboardEntry;
 import com.thy.audithub.dto.IssueRowDto;
 import com.thy.audithub.dto.JiraFieldDto;
 import com.thy.audithub.dto.JiraIssueDto;
@@ -8,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +17,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -475,5 +479,189 @@ public class ExcelService {
         style.setBorderTop(BorderStyle.THIN);
         style.setBorderLeft(BorderStyle.THIN);
         style.setBorderRight(BorderStyle.THIN);
+    }
+
+    // -----------------------------------------------------------------------
+    // Dashboard Excel export
+    // -----------------------------------------------------------------------
+
+    private static final String[] DASH_HEADERS = {
+            "Ay", "Toplam Task",
+            "Format Uygun", "Format Uygun Değil", "Format Hesap", "Format %",
+            "İçerik Uygun", "İçerik Uygun Değil", "İçerik Hesap", "İçerik %",
+            "BTA Sayısı", "Son Güncelleme"
+    };
+
+    public byte[] generateDashboardExcel(String mudurluk,
+                                         List<DashboardEntry> entries,
+                                         List<String> months,
+                                         List<String> monthLabels) {
+        try (XSSFWorkbook wb = new XSSFWorkbook();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            Sheet sheet = wb.createSheet("Dashboard");
+
+            // ---- styles ----
+            CellStyle titleStyle = wb.createCellStyle();
+            titleStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+            titleStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            Font titleFont = wb.createFont();
+            titleFont.setBold(true);
+            titleFont.setColor(IndexedColors.WHITE.getIndex());
+            titleFont.setFontHeightInPoints((short) 13);
+            titleStyle.setFont(titleFont);
+            titleStyle.setAlignment(HorizontalAlignment.CENTER);
+            titleStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+            applyBorders(titleStyle);
+
+            CellStyle hdrStyle = createHeaderStyle(wb);
+            CellStyle dataStyle = createDataStyle(wb);
+
+            CellStyle numStyle = wb.createCellStyle();
+            numStyle.cloneStyleFrom(dataStyle);
+            numStyle.setAlignment(HorizontalAlignment.CENTER);
+
+            CellStyle greenStyle = buildColorStyle(wb, IndexedColors.BRIGHT_GREEN);
+            CellStyle yellowStyle = buildColorStyle(wb, IndexedColors.YELLOW);
+            CellStyle redStyle    = buildColorStyle(wb, IndexedColors.RED);
+
+            CellStyle totalHdrStyle = wb.createCellStyle();
+            totalHdrStyle.cloneStyleFrom(hdrStyle);
+            totalHdrStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            totalHdrStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            Font totalFont = wb.createFont();
+            totalFont.setBold(true);
+            totalFont.setFontHeightInPoints((short) 10);
+            totalHdrStyle.setFont(totalFont);
+
+            // ---- title row ----
+            Row titleRow = sheet.createRow(0);
+            titleRow.setHeightInPoints(28);
+            Cell titleCell = titleRow.createCell(0);
+            titleCell.setCellValue(mudurluk + " — Dashboard Özeti");
+            titleCell.setCellStyle(titleStyle);
+            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, DASH_HEADERS.length - 1));
+
+            // ---- header row ----
+            Row hdrRow = sheet.createRow(1);
+            hdrRow.setHeightInPoints(20);
+            for (int c = 0; c < DASH_HEADERS.length; c++) {
+                Cell cell = hdrRow.createCell(c);
+                cell.setCellValue(DASH_HEADERS[c]);
+                cell.setCellStyle(hdrStyle);
+            }
+
+            // ---- build lookup ----
+            Map<String, DashboardEntry> lookup = new HashMap<>();
+            for (DashboardEntry e : entries) {
+                lookup.put(e.getYearMonth(), e);
+            }
+
+            // ---- data rows ----
+            int sumTotal = 0, sumFU = 0, sumFUD = 0, sumFH = 0;
+            int sumIU = 0, sumIUD = 0, sumIH = 0, sumBta = 0;
+            int monthsWithData = 0;
+
+            for (int i = 0; i < months.size(); i++) {
+                String ym = months.get(i);
+                DashboardEntry e = lookup.get(ym);
+                Row row = sheet.createRow(2 + i);
+                row.setHeightInPoints(18);
+
+                c(row, 0, monthLabels.get(i), dataStyle);
+                if (e != null && e.getTotalTasks() > 0) {
+                    monthsWithData++;
+                    sumTotal += e.getTotalTasks();
+                    sumFU    += e.getFormatUygun();
+                    sumFUD   += e.getFormatUygunDegil();
+                    sumFH    += e.getFormatHesap();
+                    sumIU    += e.getIcerikUygun();
+                    sumIUD   += e.getIcerikUygunDegil();
+                    sumIH    += e.getIcerikHesap();
+                    sumBta   += e.getBtaCount();
+
+                    cn(row, 1, e.getTotalTasks(), numStyle);
+                    cn(row, 2, e.getFormatUygun(), numStyle);
+                    cn(row, 3, e.getFormatUygunDegil(), numStyle);
+                    cn(row, 4, e.getFormatHesap(), numStyle);
+                    double fPct = e.getTotalTasks() > 0 ? (e.getFormatUygun() * 100.0 / e.getTotalTasks()) : 0;
+                    cpct(row, 5, fPct, wb, greenStyle, yellowStyle, redStyle);
+                    cn(row, 6, e.getIcerikUygun(), numStyle);
+                    cn(row, 7, e.getIcerikUygunDegil(), numStyle);
+                    cn(row, 8, e.getIcerikHesap(), numStyle);
+                    double iPct = e.getTotalTasks() > 0 ? (e.getIcerikUygun() * 100.0 / e.getTotalTasks()) : 0;
+                    cpct(row, 9, iPct, wb, greenStyle, yellowStyle, redStyle);
+                    cn(row, 10, e.getBtaCount(), numStyle);
+                    c(row, 11, e.getLastUpdated(), dataStyle);
+                } else {
+                    for (int col = 1; col < DASH_HEADERS.length; col++) {
+                        c(row, col, "-", numStyle);
+                    }
+                }
+            }
+
+            // ---- totals row ----
+            Row totRow = sheet.createRow(2 + months.size());
+            totRow.setHeightInPoints(20);
+            c(totRow, 0, "TOPLAM / ORT.", totalHdrStyle);
+            cn(totRow, 1, sumTotal, totalHdrStyle);
+            cn(totRow, 2, sumFU,    totalHdrStyle);
+            cn(totRow, 3, sumFUD,   totalHdrStyle);
+            cn(totRow, 4, sumFH,    totalHdrStyle);
+            double totFPct = sumTotal > 0 ? (sumFU * 100.0 / sumTotal) : 0;
+            cpct(totRow, 5, totFPct, wb, greenStyle, yellowStyle, redStyle);
+            cn(totRow, 6, sumIU,    totalHdrStyle);
+            cn(totRow, 7, sumIUD,   totalHdrStyle);
+            cn(totRow, 8, sumIH,    totalHdrStyle);
+            double totIPct = sumTotal > 0 ? (sumIU * 100.0 / sumTotal) : 0;
+            cpct(totRow, 9, totIPct, wb, greenStyle, yellowStyle, redStyle);
+            cn(totRow, 10, sumBta,  totalHdrStyle);
+            c(totRow, 11, monthsWithData + " ay", totalHdrStyle);
+
+            // ---- column widths ----
+            sheet.setColumnWidth(0, 12 * 256);
+            for (int c = 1; c <= 10; c++) sheet.setColumnWidth(c, 14 * 256);
+            sheet.setColumnWidth(11, 20 * 256);
+
+            wb.write(out);
+            return out.toByteArray();
+
+        } catch (IOException ex) {
+            throw new RuntimeException("Dashboard Excel oluşturulamadı.", ex);
+        }
+    }
+
+    private void c(Row row, int col, String val, CellStyle style) {
+        Cell cell = row.createCell(col);
+        cell.setCellValue(val != null ? val : "");
+        cell.setCellStyle(style);
+    }
+
+    private void cn(Row row, int col, int val, CellStyle style) {
+        Cell cell = row.createCell(col);
+        cell.setCellValue(val);
+        cell.setCellStyle(style);
+    }
+
+    private void cpct(Row row, int col, double pct, Workbook wb,
+                      CellStyle green, CellStyle yellow, CellStyle red) {
+        Cell cell = row.createCell(col);
+        cell.setCellValue(String.format("%.1f%%", pct));
+        if (pct >= 80) cell.setCellStyle(green);
+        else if (pct >= 60) cell.setCellStyle(yellow);
+        else cell.setCellStyle(red);
+    }
+
+    private CellStyle buildColorStyle(Workbook wb, IndexedColors bg) {
+        CellStyle style = wb.createCellStyle();
+        style.setFillForegroundColor(bg.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        Font font = wb.createFont();
+        font.setBold(true);
+        font.setFontHeightInPoints((short) 10);
+        style.setFont(font);
+        style.setAlignment(HorizontalAlignment.CENTER);
+        applyBorders(style);
+        return style;
     }
 }

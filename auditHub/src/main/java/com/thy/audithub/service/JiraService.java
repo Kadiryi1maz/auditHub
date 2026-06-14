@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,11 +40,11 @@ public class JiraService {
     /**
      * Verilen JQL ile tüm issue'ları pagination yaparak çeker.
      */
-    public List<JiraIssueDto> fetchIssues(String jql) {
-        if (!jiraProperties.isTokenConfigured()) {
+    public List<JiraIssueDto> fetchIssues(String jql, String token) {
+        if (token == null || token.isBlank()) {
             throw new JiraTokenMissingException(
                     "Jira Personal Access Token bulunamadı. " +
-                    "Lütfen JIRA_PAT environment variable değerini tanımlayın.");
+                    "Lütfen ekrandaki Jira Token alanını doldurun.");
         }
 
         List<JiraIssueDto> allIssues = new ArrayList<>();
@@ -55,7 +54,7 @@ public class JiraService {
         log.info("Jira sorgusu başlatılıyor. JQL: {}", jql);
 
         do {
-            JiraSearchResponse response = callJira(jql, startAt, maxResults);
+            JiraSearchResponse response = callJira(jql, startAt, maxResults, token);
 
             if (response.getIssues() != null) {
                 allIssues.addAll(response.getIssues());
@@ -76,21 +75,18 @@ public class JiraService {
         return allIssues;
     }
 
-    private JiraSearchResponse callJira(String jql, int startAt, int maxResults) {
-        String uri = UriComponentsBuilder.fromPath(jiraProperties.getApiSearchPath())
-                .queryParam("jql", jql)
-                .queryParam("startAt", startAt)
-                .queryParam("maxResults", maxResults)
-                .queryParam("fields", FIELDS)
-                .queryParam("expand", "changelog")
-                .build()
-                .toUriString();
-
+    private JiraSearchResponse callJira(String jql, int startAt, int maxResults, String token) {
         try {
             return restClient.get()
-                    .uri(uri)
-                    .header(HttpHeaders.AUTHORIZATION,
-                            "Bearer " + jiraProperties.getPersonalAccessToken())
+                    .uri(uriBuilder -> uriBuilder
+                            .path(jiraProperties.getApiSearchPath())
+                            .queryParam("jql", jql)
+                            .queryParam("startAt", startAt)
+                            .queryParam("maxResults", maxResults)
+                            .queryParam("fields", FIELDS)
+                            .queryParam("expand", "changelog")
+                            .build())
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                     .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                     .retrieve()
                     .onStatus(status -> status == HttpStatus.UNAUTHORIZED,
@@ -108,9 +104,16 @@ public class JiraService {
                             (req, res) -> {
                                 String body = new String(res.getBody().readAllBytes(),
                                         java.nio.charset.StandardCharsets.UTF_8);
-                                log.error("Jira 400 yanıtı — URI: {} — Body: {}", uri, body);
-                                throw new JiraInvalidQueryException(
-                                        "JQL sorgusu geçersiz. Jira yanıtı: " + body);
+                                log.error("Jira 400 yanıtı — Body: {}", body);
+                                // Jira bu mesajı veriyorsa token kabul edilmemiş, istek anonim işlenmiştir
+                                if (body.contains("anonymous users")) {
+                                    throw new JiraAuthException(
+                                            "Jira isteği anonim olarak işlendi. " +
+                                            "Token'ınızın geçerli olduğunu ve Jira Personal " +
+                                            "Access Token desteğinin etkin olduğunu doğrulayın. " +
+                                            "Jira yanıtı: " + body);
+                                }
+                                throw new JiraInvalidQueryException("Jira yanıtı: " + body);
                             })
                     .body(JiraSearchResponse.class);
 

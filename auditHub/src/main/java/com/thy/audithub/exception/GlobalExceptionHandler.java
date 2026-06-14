@@ -21,7 +21,7 @@ public class GlobalExceptionHandler {
         log.warn("Token eksik: {}", ex.getMessage());
         return errorPage(model,
                 "Jira Personal Access Token bulunamadı. " +
-                "Lütfen JIRA_PAT environment variable değerini tanımlayın.");
+                "Lütfen ekrandaki Jira Token alanına geçerli bir token girin.");
     }
 
     /**
@@ -31,9 +31,10 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public String handleAuth(JiraAuthException ex, Model model) {
         log.warn("Jira auth hatası: {}", ex.getMessage());
-        return errorPage(model,
-                "Jira authentication başarısız. " +
-                "Token geçersiz veya süresi dolmuş olabilir.");
+        String message = (ex.getMessage() != null && !ex.getMessage().isBlank())
+                ? ex.getMessage()
+                : "Jira authentication başarısız. Token geçersiz veya süresi dolmuş olabilir.";
+        return errorPage(model, message);
     }
 
     /**
@@ -54,8 +55,13 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String handleInvalidQuery(JiraInvalidQueryException ex, Model model) {
         log.warn("Geçersiz JQL: {}", ex.getMessage());
-        return errorPage(model,
-                "JQL sorgusu geçersiz. Lütfen filtreleri kontrol edin.");
+        // Include Jira response details to help debug invalid JQL causes.
+        String userMessage = "JQL sorgusu geçersiz. Lütfen filtreleri kontrol edin.";
+        String detail = ex.getMessage();
+        if (detail != null && !detail.isBlank()) {
+            userMessage += " Detay: " + detail;
+        }
+        return errorPage(model, userMessage);
     }
 
     /**

@@ -14,7 +14,7 @@
 <div class="page-wrapper">
 
     <!-- ===== SOL SIDEBAR DOCK ===== -->
-    <nav class="side-dock">
+    <nav class="side-dock side-dock--collapsed" id="sideDock">
         <div class="dock-brand">
             <div class="dock-logo-icon">
                 <img src="/img/thy-logo.png"
@@ -22,16 +22,19 @@
                      class="dock-logo-img"
                      onerror="this.onerror=null; this.src='/img/thy-logo.svg';"/>
             </div>
-            <div>
+            <div class="dock-brand-text">
                 <div class="dock-title">AuditHub</div>
                 <div class="dock-subtitle">Jira Export</div>
             </div>
+            <button class="dock-toggle-btn" id="sidebarToggleBtn"
+                    onclick="toggleSidebar()" title="Menüyü aç/kapat">&#8250;</button>
         </div>
 
         <ul class="dock-nav">
             <li class="dock-nav-item">
                 <a href="/" style="color:inherit;text-decoration:none;">
-                    <span>&#8592;</span> Filtrelere Dön
+                    <span class="nav-icon">&#8592;</span>
+                    <span class="nav-label">Filtrelere Dön</span>
                 </a>
             </li>
         </ul>
@@ -184,11 +187,6 @@
                     </tbody>
                 </table>
 
-                <!-- Manuel Satır Ekleme -->
-                <div style="margin-top: 16px;">
-                    <button type="button" class="btn-secondary" onclick="addNewRow()">+ Satır Ekle</button>
-                </div>
-
                 <!-- Boş sonuç -->
                 <div class="results-empty" th:if="${#lists.isEmpty(rows)}">
                     <p>Seçilen filtrelere uygun issue bulunamadı.</p>
@@ -196,8 +194,14 @@
                 </div>
             </div>
 
+            <!-- Manuel Satır Ekleme -->
+            <div class="results-actions-row">
+                <button type="button" class="btn-secondary" onclick="addNewRow()">+ Satır Ekle</button>
+            </div>
+
             <!-- Alt araç çubuğu -->
-            <div class="results-toolbar results-toolbar-bottom" th:if="${!#lists.isEmpty(rows)}">
+            <div class="results-toolbar results-toolbar-bottom"
+                 th:style="${#lists.isEmpty(rows)} ? 'display:none' : ''">
                 <a href="/" class="btn-secondary">&#8592; Filtrelere Dön</a>
                 <button type="submit" class="btn-primary">
                     &#8595;&nbsp; Excel İndir
@@ -213,8 +217,8 @@
                     Aylık verileriniz <strong>dashboard</strong>'a aktarılsın mı?
                 </p>
                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button type="button" class="btn-secondary" onclick="closeExportModal()">Hayır</button>
-                    <button type="button" class="btn-primary" onclick="confirmExportToDashboard()">Evet</button>
+                    <button type="button" class="btn-secondary" onclick="doExport(false)">Hayır</button>
+                    <button type="button" class="btn-primary" onclick="doExport(true)">Evet</button>
                 </div>
             </div>
         </div>
@@ -223,82 +227,138 @@
 </div>
 
 <script>
-    // Satır silme
+    // ── Satır silme ──────────────────────────────────────────────
     function deleteRow(btn) {
-        const tr = btn.closest('tr');
-        tr.remove();
+        btn.closest('tr').remove();
         reindexRows();
         updateCount();
     }
 
-    // Yeni satır ekleme
+    // ── Boş, manuel doldurulabilir satır ekleme ──────────────────
     function addNewRow() {
-        const tbody = document.querySelector('.results-table tbody');
-        if (!tbody) return;
-        
-        const rows = tbody.querySelectorAll('tr');
-        const rowCount = rows.length;
-        
-        // Son satırı clone et
-        const lastRow = rows[rowCount - 1];
-        if (!lastRow) return;
-        
-        const newRow = lastRow.cloneNode(true);
-        
-        // Tüm input/select'leri boşalt ve indekslerini güncelle
-        newRow.querySelectorAll('input[name], select[name]').forEach(function(el) {
-            const oldName = el.name;
-            el.name = oldName.replace(/rows\[\d+\]/, 'rows[' + rowCount + ']');
-            // Input ise boşalt
-            if (el.tagName === 'INPUT') {
-                el.value = '';
-            } else if (el.tagName === 'SELECT') {
-                el.value = '';
+        var tbody = document.querySelector('.results-table tbody');
+
+        if (!tbody) {
+            // Tablonun hiç olmadığı (boş sonuç) durumda tabloyu oluştur
+            var wrapper  = document.querySelector('.results-table-wrapper');
+            var table = document.createElement('table');
+            table.className = 'results-table';
+            table.innerHTML =
+                '<thead><tr>'
+                + '<th class="col-del"></th><th class="col-seq">#</th>'
+                + '<th>Issue Type</th><th>Key</th><th class="col-summary">Summary</th>'
+                + '<th>Status</th><th>Labels</th><th>Bileşen</th>'
+                + '<th>BTA (Test)</th><th>BTA (Dev)</th><th>BTA Root Cause</th>'
+                + '<th>Tester</th><th>Assignee</th><th>Created</th>'
+                + '<th class="col-yellow">Ürün</th>'
+                + '<th class="col-yellow">Issue Type Uygunluk</th>'
+                + '<th class="col-yellow">Analiz Format Uygunluk</th>'
+                + '<th class="col-yellow">Analiz İçerik Olgunluk</th>'
+                + '<th class="col-yellow col-wide">Analiz Neden Uygun Değil?</th>'
+                + '</tr></thead><tbody></tbody>';
+            var empty = wrapper.querySelector('.results-empty');
+            if (empty) {
+                empty.style.display = 'none';
+                wrapper.insertBefore(table, empty);
+            } else {
+                wrapper.appendChild(table);
             }
-        });
-        
-        tbody.appendChild(newRow);
+            var bottomBar = document.querySelector('.results-toolbar-bottom');
+            if (bottomBar) bottomBar.style.display = 'flex';
+            tbody = table.querySelector('tbody');
+        }
+
+        var idx = tbody.querySelectorAll('tr').length;
+        var tr  = document.createElement('tr');
+
+        function inp(field, ph, extraClass) {
+            return '<td' + (extraClass ? ' class="' + extraClass + '"' : '') + '>'
+                + '<input type="text" name="rows[' + idx + '].' + field + '" class="tbl-input" placeholder="' + ph + '"/>'
+                + '</td>';
+        }
+        function sel(field) {
+            return '<td class="col-yellow">'
+                + '<select name="rows[' + idx + '].' + field + '" class="tbl-select">'
+                + '<option value="">—</option>'
+                + '<option value="Uygun">Uygun</option>'
+                + '<option value="Uygun Değil">Uygun Değil</option>'
+                + '<option value="Hesaplanamaz">Hesaplanamaz</option>'
+                + '</select></td>';
+        }
+
+        tr.innerHTML =
+            '<td class="col-del"><button type="button" class="btn-del-row" onclick="deleteRow(this)" title="Satırı çıkar">✕</button></td>'
+            + '<td class="col-seq">' + (idx + 1) + '</td>'
+            + inp('issueType',  'Issue Type')
+            + inp('key',        'Key')
+            + inp('summary',    'Summary', 'col-summary')
+            + inp('status',     'Status')
+            + inp('labels',     'Labels')
+            + inp('component',  'Bileşen')
+            + inp('btaTest',    'BTA Test', 'bta-cell')
+            + inp('btaDev',     'BTA Dev')
+            + inp('btaRootCause','BTA RC')
+            + inp('tester',     'Tester')
+            + inp('assignee',   'Assignee')
+            + inp('created',    'yyyy-MM-dd')
+            + inp('urun',       'Ürün adı...', 'col-yellow')
+            + sel('issueTypeUygunluk')
+            + sel('analizFormatUygunluk')
+            + sel('analizIcerikOlgunluk')
+            + '<td class="col-yellow col-wide"><input type="text" name="rows[' + idx + '].analizNedenUygunDegil" class="tbl-input" placeholder="Açıklama..."/></td>';
+
+        tbody.appendChild(tr);
         reindexRows();
         updateCount();
+        tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    // input/select name'lerini sıfırdan indeksle
+    // ── İndeks güncelleme ─────────────────────────────────────────
     function reindexRows() {
-        const rows = document.querySelectorAll('.results-table tbody tr');
-        rows.forEach(function(tr, idx) {
-            // sıra no
+        document.querySelectorAll('.results-table tbody tr').forEach(function(tr, idx) {
             tr.querySelector('.col-seq').textContent = idx + 1;
-            // tüm name'li inputlar ve selectler
             tr.querySelectorAll('input[name], select[name]').forEach(function(el) {
                 el.name = el.name.replace(/rows\[\d+\]/, 'rows[' + idx + ']');
             });
         });
     }
 
-    // başlıktaki issue sayısını güncelle
     function updateCount() {
-        const cnt = document.querySelectorAll('.results-table tbody tr').length;
-        const el = document.querySelector('.content-subtitle span');
+        var cnt = document.querySelectorAll('.results-table tbody tr').length;
+        var el  = document.querySelector('.content-subtitle span');
         if (el) el.textContent = cnt;
     }
 
-    // Export yükleme animasyonu + geri sayım + Modal
-    let exportFormPending = false;
-    
-    function closeExportModal() {
-        document.getElementById('exportModal').classList.add('hidden');
-        exportFormPending = false;
+    // ── Sidebar toggle ────────────────────────────────────────────
+    function toggleSidebar() {
+        var dock = document.getElementById('sideDock');
+        var btn  = document.getElementById('sidebarToggleBtn');
+        var collapsed = dock.classList.toggle('side-dock--collapsed');
+        if (btn) btn.innerHTML = collapsed ? '&#8250;' : '&#8249;';
     }
 
-    function confirmExportToDashboard() {
-        const form = document.getElementById('exportForm');
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'autoExportToDashboard';
-        input.value = 'true';
-        form.appendChild(input);
-        closeExportModal();
+    // ── Export modal + Excel indirme ──────────────────────────────
+    var exportFormPending = false;
+
+    function closeExportModal() {
+        document.getElementById('exportModal').classList.add('hidden');
+    }
+
+    // Her iki seçenekte de (Evet/Hayır) Excel indirilir;
+    // sadece toDashboard=true ise veriler dashboard'a da kaydedilir.
+    function doExport(toDashboard) {
+        var form = document.getElementById('exportForm');
+        var existing = form.querySelector('input[name="autoExportToDashboard"]');
+        if (existing) existing.remove();
+        if (toDashboard) {
+            var inp = document.createElement('input');
+            inp.type  = 'hidden';
+            inp.name  = 'autoExportToDashboard';
+            inp.value = 'true';
+            form.appendChild(inp);
+        }
         exportFormPending = true;
+        closeExportModal();
         form.submit();
     }
 
@@ -308,25 +368,26 @@
             document.getElementById('exportModal').classList.remove('hidden');
             return false;
         }
-        
-        const btn = document.getElementById('exportBtn');
-        const txt = document.getElementById('exportBtnText');
-        const loading = document.getElementById('exportBtnLoading');
-        const countdownEl = document.getElementById('exportCountdown');
+
+        var btn        = document.getElementById('exportBtn');
+        var txt        = document.getElementById('exportBtnText');
+        var loading    = document.getElementById('exportBtnLoading');
+        var countdown  = document.getElementById('exportCountdown');
         if (btn) btn.disabled = true;
         if (txt) txt.classList.add('hidden');
         if (loading) loading.classList.remove('hidden');
 
-        let seconds = 8;
-        if (countdownEl) countdownEl.textContent = seconds;
-        const timer = setInterval(function() {
+        var seconds = 8;
+        if (countdown) countdown.textContent = seconds;
+        var timer = setInterval(function() {
             seconds--;
-            if (countdownEl) countdownEl.textContent = seconds > 0 ? seconds : 0;
+            if (countdown) countdown.textContent = seconds > 0 ? seconds : 0;
             if (seconds <= 0) {
                 clearInterval(timer);
                 if (btn) btn.disabled = false;
                 if (txt) txt.classList.remove('hidden');
                 if (loading) loading.classList.add('hidden');
+                exportFormPending = false;
             }
         }, 1000);
     });

@@ -70,7 +70,7 @@ public class ReportController {
                 : jqlBuilderService.build(filterRequest);
         log.info("Üretilen JQL: {}", jql);
 
-        List<JiraIssueDto> issues = jiraService.fetchIssues(jql);
+        List<JiraIssueDto> issues = jiraService.fetchIssues(jql, filterRequest.getJiraToken());
         List<IssueRowDto> rows = excelService.convertToRows(issues);
 
         model.addAttribute("rows", rows);
@@ -152,7 +152,7 @@ public class ReportController {
 
         model.addAttribute("jqlPreview", jql);
 
-        List<JiraIssueDto> issues = jiraService.fetchIssues(jql);
+        List<JiraIssueDto> issues = jiraService.fetchIssues(jql, filterRequest.getJiraToken());
 
         byte[] excelBytes = excelService.generateExcel(issues);
         String filename = buildFilename(filterRequest);
