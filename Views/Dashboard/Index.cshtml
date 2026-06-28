@@ -1,0 +1,401 @@
+@model List<AuditHub.Models.MudurlukStats>
+@{
+    Layout = null;
+    var stats = Model ?? [];
+    var months = (List<string>)(ViewBag.Months ?? new List<string>());
+    var monthLabels = (List<string>)(ViewBag.MonthLabels ?? new List<string>());
+    var mudurlukler = (List<string>)(ViewBag.Mudurlukler ?? new List<string>());
+    string? importMsg = ViewBag.ImportMsg;
+    string? importErr = ViewBag.ImportErr;
+
+    string PctClass(double p) => p >= 80 ? "pct-green" : p >= 60 ? "pct-yellow" : "pct-red";
+    string CardClass(double p) => p >= 80 ? " pct-green" : p >= 60 ? " pct-yellow" : " pct-red";
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AuditHub — Dashboard 2026</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="/css/style.css"/>
+    <style>
+        .dash-tabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;flex-shrink:0;}
+        .dash-tab-btn{padding:5px 11px;border:1.5px solid #c8d6e5;border-radius:20px;background:#f8fafc;color:#475569;font-size:11.5px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap;letter-spacing:.01em;}
+        .dash-tab-btn:hover{background:#e8f0fe;border-color:#3b82f6;color:#1d4ed8;}
+        .dash-tab-btn.active{background:#1d4ed8;border-color:#1d4ed8;color:#fff;font-weight:600;}
+        .dash-panel{display:none;}.dash-panel.active{display:block;}
+        .panel-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #e2e8f0;flex-shrink:0;}
+        .panel-title{font-size:16px;font-weight:700;color:#1e3a5f;}
+        .panel-meta{font-size:12px;color:#64748b;margin-top:2px;}
+        .btn-dash-export{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:#059669;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer;transition:background .15s;white-space:nowrap;}
+        .btn-dash-export:hover{background:#047857;color:#fff;text-decoration:none;}
+        .summary-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;flex-shrink:0;}
+        .summary-card{flex:1;min-width:120px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 14px;text-align:center;}
+        .summary-card .sc-val{font-size:19px;font-weight:700;color:#1e3a5f;}
+        .summary-card .sc-lbl{font-size:11px;color:#64748b;margin-top:1px;}
+        .summary-card.pct-green{border-color:#86efac;background:#f0fdf4;}.summary-card.pct-yellow{border-color:#fde68a;background:#fffbeb;}.summary-card.pct-red{border-color:#fca5a5;background:#fef2f2;}
+        .summary-card.pct-green .sc-val{color:#15803d;}.summary-card.pct-yellow .sc-val{color:#b45309;}.summary-card.pct-red .sc-val{color:#b91c1c;}
+        .dash-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+        .dash-table th{background:#1e3a5f;color:#fff;padding:8px;text-align:center;font-weight:600;white-space:nowrap;border:1px solid #2c4e72;}
+        .dash-table th.col-ay{text-align:left;min-width:60px;}
+        .dash-table th.grp-ick{border-left:2px solid #4a7099;}
+        .dash-table th.col-pct{font-style:italic;font-weight:400;opacity:.85;}
+        .dash-table-wrapper{overflow-x:auto;border-radius:8px;border:1px solid #e2e8f0;}
+        .dash-table td{padding:7px 8px;border-bottom:1px solid #e2e8f0;text-align:center;color:#334155;}
+        .dash-table td.col-ay{text-align:left;font-weight:600;color:#1e3a5f;background:#f1f5f9;}
+        .dash-table tr:hover td:not(.col-pct-cell){background:#f0f7ff;}.dash-table tr:hover td.col-ay{background:#e0eeff;}
+        .dash-table tr.avg-row td{background:#fef9c3 !important;font-weight:700;color:#78350f;border-top:2px solid #fbbf24;}
+        .dash-table tr.avg-row td.col-ay{background:#fef08a !important;}
+        .dash-table td.empty{color:#cbd5e1;}
+        .editable{display:inline-block;min-width:32px;padding:2px 4px;border-radius:4px;border:1.5px solid transparent;outline:none;cursor:text;transition:border-color .15s,background .15s;}
+        .editable:hover{border-color:#93c5fd;background:#eff6ff;}.editable:focus{border-color:#3b82f6;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.15);}
+        .editable.saved{border-color:#86efac;background:#f0fdf4;}.editable.error{border-color:#fca5a5;background:#fef2f2;}
+        .col-pct-cell{background:#f8fafc;}
+        .pct-badge{display:inline-block;padding:2px 7px;border-radius:12px;font-size:11.5px;font-weight:700;}
+        .pct-green{background:#dcfce7;color:#15803d;}.pct-yellow{background:#fef9c3;color:#92400e;}.pct-red{background:#fee2e2;color:#b91c1c;}.pct-none{color:#94a3b8;font-style:italic;font-weight:400;font-size:11px;}
+        .no-data-msg{padding:36px 24px;text-align:center;color:#94a3b8;font-style:italic;background:#f8fafc;border-radius:10px;border:1.5px dashed #cbd5e1;font-size:13px;}
+        .import-section{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 16px;margin-bottom:12px;flex-shrink:0;}
+        .import-title{font-size:13px;font-weight:700;color:#1e3a5f;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+        .import-bar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;}
+        .import-bar label{font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:4px;}
+        .import-bar select,.import-bar input[type=month],.import-bar input[type=file]{border:1.5px solid #cbd5e1;border-radius:6px;padding:6px 10px;font-size:12.5px;background:#fff;color:#334155;outline:none;}
+        .btn-import{padding:7px 20px;background:#1d4ed8;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;}
+        .btn-import:hover{background:#1e40af;}
+        .alert-success{background:#dcfce7;border:1px solid #86efac;color:#166534;border-radius:6px;padding:10px 16px;margin-bottom:14px;font-size:13px;}
+        .alert-error{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;border-radius:6px;padding:10px 16px;margin-bottom:14px;font-size:13px;}
+        .save-status{font-size:11px;color:#64748b;margin-top:6px;min-height:16px;text-align:right;}
+    </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+    <nav class="side-dock" id="sideDock">
+        <div class="dock-brand">
+            <div class="dock-logo-icon">
+                <img src="/img/thy-logo.png" alt="THY" class="dock-logo-img"
+                     onerror="this.onerror=null;this.src='/img/thy-logo.svg';"/>
+            </div>
+            <div class="dock-brand-text">
+                <div class="dock-title">AuditHub</div>
+                <div class="dock-subtitle">Jira Export</div>
+            </div>
+            <button class="dock-toggle-btn" id="sidebarToggleBtn" onclick="toggleSidebar()" title="Menüyü aç/kapat">&#8250;</button>
+        </div>
+        <ul class="dock-nav">
+            <li class="dock-nav-item">
+                <a href="/" style="color:inherit;text-decoration:none;">
+                    <span class="nav-icon">&#8592;</span>
+                    <span class="nav-label">Filtrelere Dön</span>
+                </a>
+            </li>
+        </ul>
+        <div class="dock-footer">AuditHub &copy; 2026</div>
+    </nav>
+
+    <main class="main-content">
+        <header class="content-header">
+            <div>
+                <h1 class="content-title">Dashboard 2026</h1>
+                <p class="content-subtitle">Md. bazlı aylık audit istatistikleri — hücrelere tıklayarak düzenleyebilirsiniz.</p>
+            </div>
+        </header>
+
+        @if (importMsg != null)
+        {
+            <div class="alert-success">@importMsg</div>
+        }
+        @if (importErr != null)
+        {
+            <div class="alert-error">@importErr</div>
+        }
+
+        <div class="import-section">
+            <div class="import-title">&#8659; Geçmiş Dönem Excel Yükle</div>
+            <form action="/import-dashboard" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="import-bar">
+                    <div>
+                        <label>Md.</label>
+                        <select name="mudurluk" required>
+                            @foreach (var m in mudurlukler)
+                            {
+                                <option value="@m">@m</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label>Yıl / Ay</label>
+                        <input type="month" name="yearMonth" value="2026-01" required/>
+                    </div>
+                    <div>
+                        <label>Excel Dosyası (.xlsx)</label>
+                        <input type="file" name="file" accept=".xlsx" required/>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn-import">&#8679; Yükle &amp; Kaydet</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="dash-tabs" id="dashTabs">
+            @for (int si = 0; si < stats.Count; si++)
+            {
+                <button class="dash-tab-btn @(si == 0 ? "active" : "")"
+                        onclick="showPanel(@si)">@stats[si].Name</button>
+            }
+        </div>
+
+        @for (int si = 0; si < stats.Count; si++)
+        {
+            var s = stats[si];
+            <div id="panel-@si" class="dash-panel @(si == 0 ? "active" : "")">
+
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-title">@s.Name</div>
+                        @if (s.Average != null)
+                        {
+                            <div class="panel-meta">Veri bulunan ay sayısı: <strong>@s.DataCount</strong></div>
+                        }
+                    </div>
+                    @if (s.Average != null)
+                    {
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <button type="button" class="btn-dash-export btn-copy-3months"
+                                    style="background:#2563eb;" data-mudurluk="@s.Name">
+                                &#128203; Son 3 Ayı Kopyala
+                            </button>
+                            <a href="/dashboard/export-excel?mudurluk=@Uri.EscapeDataString(s.Name)"
+                               class="btn-dash-export">&#11015; Excel İndir</a>
+                        </div>
+                    }
+                </div>
+
+                @if (s.Average != null)
+                {
+                    <div class="summary-row">
+                        <div class="summary-card">
+                            <div class="sc-val">@s.Average.TotalTasks</div>
+                            <div class="sc-lbl">Ort. Toplam Task</div>
+                        </div>
+                        <div class="summary-card@CardClass(s.FormatUygunPercent)">
+                            <div class="sc-val">@s.FormatUygunPercent.ToString("F1")%</div>
+                            <div class="sc-lbl">Format Uygunluk %</div>
+                        </div>
+                        <div class="summary-card@CardClass(s.IcerikUygunPercent)">
+                            <div class="sc-val">@s.IcerikUygunPercent.ToString("F1")%</div>
+                            <div class="sc-lbl">İçerik Uygunluk %</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="sc-val">@s.Average.BtaCount</div>
+                            <div class="sc-lbl">Ort. BTA Sayısı</div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="no-data-msg">
+                        Henüz bu müdürlük için veri girilmemiş.<br/>
+                        Yukarıdaki formdan Excel yükleyebilir veya sonuç sayfasından dışa aktarabilirsiniz.
+                    </div>
+                }
+
+                @if (s.Average != null)
+                {
+                    <div class="dash-table-wrapper">
+                        <div class="save-status" id="saveStatus"></div>
+                        <table class="dash-table" data-mudurluk="@s.Name">
+                            <thead>
+                                <tr>
+                                    <th class="col-ay" rowspan="2">Ay</th>
+                                    <th rowspan="2">Toplam<br/>Task</th>
+                                    <th colspan="4" class="grp-fmt">Analiz Format Uygunluk</th>
+                                    <th colspan="4" class="grp-ick">Analiz İçerik Olgunluk</th>
+                                    <th rowspan="2">BTA</th>
+                                </tr>
+                                <tr>
+                                    <th class="grp-fmt">Uygun</th><th class="grp-fmt">Uygun Değil</th>
+                                    <th class="grp-fmt">Hesap.</th><th class="col-pct grp-fmt">%</th>
+                                    <th class="grp-ick">Uygun</th><th class="grp-ick">Uygun Değil</th>
+                                    <th class="grp-ick">Hesap.</th><th class="col-pct grp-ick">%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int ei = 0; ei < s.MonthEntries.Count; ei++)
+                                {
+                                    var entry = s.MonthEntries[ei];
+                                    var ym = months.Count > ei ? months[ei] : "";
+                                    var ml = monthLabels.Count > ei ? monthLabels[ei] : ym;
+                                    <tr>
+                                        <td class="col-ay">@ml</td>
+                                        @if (entry != null)
+                                        {
+                                            void E(string field, int val) {
+                                                <td><span class="editable" contenteditable="true"
+                                                          data-mudurluk="@s.Name"
+                                                          data-year-month="@entry.YearMonth"
+                                                          data-field="@field">@val</span></td>
+                                            }
+                                            E("totalTasks",       entry.TotalTasks);
+                                            E("formatUygun",      entry.FormatUygun);
+                                            E("formatUygunDegil", entry.FormatUygunDegil);
+                                            E("formatHesap",      entry.FormatHesap);
+                                            <td class="col-pct-cell"><span class="pct-badge pct-none" data-pct-fmt>—</span></td>
+                                            E("icerikUygun",      entry.IcerikUygun);
+                                            E("icerikUygunDegil", entry.IcerikUygunDegil);
+                                            E("icerikHesap",      entry.IcerikHesap);
+                                            <td class="col-pct-cell"><span class="pct-badge pct-none" data-pct-ick>—</span></td>
+                                            E("btaCount",         entry.BtaCount);
+                                        }
+                                        else
+                                        {
+                                            void Z(string field) {
+                                                <td><span class="editable" contenteditable="true"
+                                                          data-mudurluk="@s.Name"
+                                                          data-year-month="@ym"
+                                                          data-field="@field">0</span></td>
+                                            }
+                                            Z("totalTasks"); Z("formatUygun"); Z("formatUygunDegil"); Z("formatHesap");
+                                            <td class="col-pct-cell"><span class="pct-badge pct-none" data-pct-fmt>—</span></td>
+                                            Z("icerikUygun"); Z("icerikUygunDegil"); Z("icerikHesap");
+                                            <td class="col-pct-cell"><span class="pct-badge pct-none" data-pct-ick>—</span></td>
+                                            Z("btaCount");
+                                        }
+                                    </tr>
+                                }
+                                <tr class="avg-row">
+                                    <td class="col-ay">2026 Ort.</td>
+                                    <td>@s.Average.TotalTasks</td>
+                                    <td>@s.Average.FormatUygun</td>
+                                    <td>@s.Average.FormatUygunDegil</td>
+                                    <td>@s.Average.FormatHesap</td>
+                                    <td class="col-pct-cell">
+                                        <span class="pct-badge @PctClass(s.FormatUygunPercent)">@s.FormatUygunPercent.ToString("F1")%</span>
+                                    </td>
+                                    <td>@s.Average.IcerikUygun</td>
+                                    <td>@s.Average.IcerikUygunDegil</td>
+                                    <td>@s.Average.IcerikHesap</td>
+                                    <td class="col-pct-cell">
+                                        <span class="pct-badge @PctClass(s.IcerikUygunPercent)">@s.IcerikUygunPercent.ToString("F1")%</span>
+                                    </td>
+                                    <td>@s.Average.BtaCount</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        }
+    </main>
+</div>
+
+<script>
+var ALL_MONTHS = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(months));
+
+function showPanel(idx){
+    document.querySelectorAll('.dash-panel').forEach(function(p){p.classList.remove('active');});
+    document.querySelectorAll('.dash-tab-btn').forEach(function(b){b.classList.remove('active');});
+    document.getElementById('panel-'+idx).classList.add('active');
+    document.querySelectorAll('.dash-tab-btn')[idx].classList.add('active');
+}
+function toggleSidebar(){
+    var dock=document.getElementById('sideDock');
+    var btn=document.getElementById('sidebarToggleBtn');
+    var c=dock.classList.toggle('side-dock--collapsed');
+    btn.innerHTML=c?'&#8250;':'&#8249;';
+}
+function pctClass(p){if(isNaN(p))return 'pct-none';if(p>=80)return 'pct-green';if(p>=60)return 'pct-yellow';return 'pct-red';}
+function updateRowPct(tr){
+    var total=parseInt(getEV(tr,'totalTasks'),10);
+    var fu=parseInt(getEV(tr,'formatUygun'),10);
+    var iu=parseInt(getEV(tr,'icerikUygun'),10);
+    var fb=tr.querySelector('[data-pct-fmt]');
+    var ib=tr.querySelector('[data-pct-ick]');
+    if(fb){if(!isNaN(total)&&total>0&&!isNaN(fu)){var fp=fu/total*100;fb.textContent=fp.toFixed(1)+'%';fb.className='pct-badge '+pctClass(fp);}else{fb.textContent='—';fb.className='pct-badge pct-none';}}
+    if(ib){if(!isNaN(total)&&total>0&&!isNaN(iu)){var ip=iu/total*100;ib.textContent=ip.toFixed(1)+'%';ib.className='pct-badge '+pctClass(ip);}else{ib.textContent='—';ib.className='pct-badge pct-none';}}
+}
+function getEV(tr,field){var s=tr.querySelector('[data-field="'+field+'"]');return s?s.textContent.trim():'';}
+function initPcts(){document.querySelectorAll('.dash-table tbody tr:not(.avg-row)').forEach(updateRowPct);}
+
+document.addEventListener('keydown',function(e){
+    if(!e.target.classList.contains('editable'))return;
+    var ok=['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Enter','Home','End'];
+    if(ok.indexOf(e.key)!==-1)return;
+    if(e.key>='0'&&e.key<='9')return;
+    e.preventDefault();
+},false);
+document.addEventListener('keydown',function(e){
+    if(e.target.classList.contains('editable')&&e.key==='Enter'){e.preventDefault();e.target.blur();}
+},false);
+
+var saveTimer=null;
+document.addEventListener('blur',function(e){
+    if(!e.target.classList.contains('editable'))return;
+    var span=e.target;
+    var val=span.textContent.replace(/\D/g,'');if(val==='')val='0';
+    span.textContent=val;
+    var tr=span.closest('tr');if(tr)updateRowPct(tr);
+    var mudurluk=span.getAttribute('data-mudurluk');
+    var yearMonth=span.getAttribute('data-year-month');
+    var field=span.getAttribute('data-field');
+    if(!mudurluk||!yearMonth||!field)return;
+    clearTimeout(saveTimer);
+    saveTimer=setTimeout(function(){
+        fetch('/dashboard/save-cell',{method:'POST',
+            headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            body:'mudurluk='+encodeURIComponent(mudurluk)+'&yearMonth='+encodeURIComponent(yearMonth)+'&field='+encodeURIComponent(field)+'&value='+encodeURIComponent(val)})
+        .then(function(r){return r.json();})
+        .then(function(d){
+            var st=document.getElementById('saveStatus');
+            if(d.success){span.classList.add('saved');setTimeout(function(){span.classList.remove('saved');},1400);if(st){st.textContent='✓ Kaydedildi';st.style.color='#15803d';}}
+            else{span.classList.add('error');setTimeout(function(){span.classList.remove('error');},2500);if(st){st.textContent='✗ '+d.message;st.style.color='#b91c1c';}}
+            if(st)setTimeout(function(){st.textContent='';},4000);
+        }).catch(function(err){console.error(err);});
+    },200);
+},true);
+
+var FULL_MONTHS={'01':'Ocak','02':'Şubat','03':'Mart','04':'Nisan','05':'Mayıs','06':'Haziran','07':'Temmuz','08':'Ağustos','09':'Eylül','10':'Ekim','11':'Kasım','12':'Aralık'};
+function pad2(n){return n<10?'0'+n:''+n;}
+function buildLast3Text(panel,mudurluk){
+    var now=new Date();
+    var cur=now.getFullYear()+'-'+pad2(now.getMonth()+1);
+    var ci=ALL_MONTHS.indexOf(cur);if(ci===-1)ci=ALL_MONTHS.length;
+    var tgt=[];for(var i=ci-3;i<ci;i++){if(i>=0)tgt.push(i);}
+    var rows=panel.querySelectorAll('.dash-table tbody tr:not(.avg-row)');
+    var lines=[mudurluk+' — Son 3 Ay Özeti',''];
+    tgt.forEach(function(idx){
+        var tr=rows[idx];if(!tr)return;
+        var yp=ALL_MONTHS[idx].split('-');
+        var mn=(FULL_MONTHS[yp[1]]||yp[1])+' '+yp[0];
+        var total=getEV(tr,'totalTasks');var fu=getEV(tr,'formatUygun');var fud=getEV(tr,'formatUygunDegil');var fh=getEV(tr,'formatHesap');
+        var iu=getEV(tr,'icerikUygun');var iud=getEV(tr,'icerikUygunDegil');var ih=getEV(tr,'icerikHesap');var bta=getEV(tr,'btaCount');
+        var fe=tr.querySelector('[data-pct-fmt]');var ie=tr.querySelector('[data-pct-ick]');
+        lines.push(mn+':');
+        lines.push('  Toplam Task: '+total);
+        lines.push('  Analiz Format Uygunluk -> Uygun: '+fu+' | Uygun Değil: '+fud+' | Hesaplanamaz: '+fh+' | %: '+(fe?fe.textContent.trim():'—'));
+        lines.push('  Analiz İçerik Olgunluk -> Uygun: '+iu+' | Uygun Değil: '+iud+' | Hesaplanamaz: '+ih+' | %: '+(ie?ie.textContent.trim():'—'));
+        lines.push('  BTA: '+bta);lines.push('');
+    });
+    return lines.join('\n').trim();
+}
+function copyLast3(btn){
+    var panel=btn.closest('.dash-panel');var mudurluk=btn.getAttribute('data-mudurluk');
+    var text=buildLast3Text(panel,mudurluk);var st=panel.querySelector('#saveStatus');
+    function fb(msg,color){if(!st)return;st.textContent=msg;st.style.color=color;setTimeout(function(){st.textContent='';},3000);}
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){fb('✓ Son 3 ay panoya kopyalandı','#15803d');}).catch(function(){fb('✗ Kopyalama başarısız','#b91c1c');});
+    }else{
+        var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+        document.body.appendChild(ta);ta.select();
+        try{document.execCommand('copy');fb('✓ Son 3 ay panoya kopyalandı','#15803d');}catch(e){fb('✗ Kopyalama başarısız','#b91c1c');}
+        document.body.removeChild(ta);
+    }
+}
+function initCopyButtons(){document.querySelectorAll('.btn-copy-3months').forEach(function(b){b.addEventListener('click',function(){copyLast3(b);});});}
+document.addEventListener('DOMContentLoaded',function(){initPcts();initCopyButtons();});
+</script>
+</body>
+</html>

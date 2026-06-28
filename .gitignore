@@ -1,18 +1,18 @@
-target/
-.idea/
-*.iml
+bin/
+obj/
+.vs/
+*.user
+*.suo
 .env
-application-local.properties
-.DS_Store
-*.class
+appsettings.Development.json
+appsettings.local.json
 *.log
+.DS_Store
 **/.vscode/
 
-# Local Maven distribution (not part of source)
+# Legacy Java project (removed, kept on disk locally, not tracked)
+/auditHub/
 /apache-maven-3.9.16/
 
 # Windows folder metadata
 desktop.ini
-
-# Stray top-level src/ (actual module is auditHub/src/)
-/src/

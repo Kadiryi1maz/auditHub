@@ -1,0 +1,175 @@
+@model AuditHub.Models.FilterRequest
+@{
+    Layout = null;
+    var f = Model ?? new FilterRequest();
+    bool Has(List<string> list, string val) => list?.Contains(val) == true;
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AuditHub — Jira Excel Export</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<div class="page-wrapper">
+
+    <nav class="side-dock">
+        <div class="dock-brand">
+            <div class="dock-logo-icon">
+                <img src="/img/thy-logo.png" alt="THY" class="dock-logo-img"
+                     onerror="this.onerror=null;this.src='/img/thy-logo.svg';"/>
+            </div>
+            <div>
+                <div class="dock-title">AuditHub</div>
+                <div class="dock-subtitle">Jira Export</div>
+            </div>
+        </div>
+        <ul class="dock-nav">
+            <li class="dock-nav-item"><a href="/dashboard" style="color:inherit;text-decoration:none;">&#9783; Dashboard</a></li>
+            <li class="dock-nav-item active"><span>&#8595;</span> Excel Export</li>
+        </ul>
+        <div class="dock-footer">AuditHub &copy; 2026</div>
+    </nav>
+
+    <div class="content-canvas">
+        <header class="top-bar">
+            <div class="page-title">
+                <h1>Jira Excel Export</h1>
+                <p>Filtreleri ayarla, Jira'dan issue'ları çek, Excel olarak indir.</p>
+            </div>
+        </header>
+
+        <div class="main-content">
+            @if (ViewBag.ErrorMessage != null)
+            {
+                <div class="alert alert-error">@ViewBag.ErrorMessage</div>
+            }
+
+            <div class="card">
+                <form id="exportForm" action="/preview" method="post">
+                    @Html.AntiForgeryToken()
+
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-error">
+                            <ul class="error-list">
+                                @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                {
+                                    <li>@err.ErrorMessage</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="jiraToken" class="form-label">Jira Personal Access Token</label>
+                            <input type="password" id="jiraToken" name="JiraToken"
+                                   value="@f.JiraToken" class="form-input"
+                                   placeholder="Jira Token giriniz..." required/>
+                        </div>
+                        <div class="form-group">
+                            <label for="mudurluk" class="form-label">Md.</label>
+                            <select id="mudurluk" name="Mudurluk" class="form-input">
+                                @foreach (var m in new[]{"Açık Sistem Çöz. Md.","Rezervasyon & Biletleme Md.",
+                                    "Gelir Yönetimi ve Ücret Çöz. Md.","Doğrudan Satış Çöz. Md.",
+                                    "Dijital Yolcu Çöz Md.","DCS Çöz. Md.","Alışveriş İçerik Md.",
+                                    "Miles&Smiles Md.","Biletleme ve Ek Hizmetler Md.",
+                                    "Satış Sonrası ve IRROPS Md.",
+                                    "Bağlantı ve Uçak İçi Dijital Çözümler Md.",
+                                    "Ajet Dijital Çöz Md.","B2b Çöz Md.","Ödeme Çöz. Md.",
+                                    "Miles and Smiles Çöz. Md.",
+                                    "Müşteri İlişkileri ve Pazarlama Çöz.Md"})
+                                {
+                                    <option value="@m" selected="@(f.Mudurluk == m ? "selected" : null)">@m</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Issue Types</label>
+                            <div class="checkbox-group">
+                                @foreach (var it in new[]{"Story","Task","Bug","Sub-task"})
+                                {
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="IssueTypes" value="@it"
+                                               @(Has(f.IssueTypes, it) ? "checked" : "")/>
+                                        @it
+                                    </label>
+                                }
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="createdStartDate" class="form-label">Created Start Date</label>
+                            <input type="date" id="createdStartDate" name="CreatedStartDate"
+                                   value="@f.CreatedStartDate.ToString("yyyy-MM-dd")"
+                                   class="form-input"/>
+                        </div>
+                    </div>
+
+                    <hr class="form-divider"/>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Statuses</label>
+                            <div class="checkbox-group">
+                                @foreach (var st in new[]{"Done","Closed","Resolved","UAT","Ready For UAT"})
+                                {
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="Statuses" value="@st"
+                                               @(Has(f.Statuses, st) ? "checked" : "")/>
+                                        @st
+                                    </label>
+                                }
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status Changed Date Range</label>
+                            <div class="date-range">
+                                <div class="date-range-field">
+                                    <label for="statusChangedStartDate" class="date-label">Başlangıç</label>
+                                    <input type="date" id="statusChangedStartDate"
+                                           name="StatusChangedStartDate"
+                                           value="@f.StatusChangedStartDate.ToString("yyyy-MM-dd")"
+                                           class="form-input"/>
+                                </div>
+                                <span class="date-range-sep">—</span>
+                                <div class="date-range-field">
+                                    <label for="statusChangedEndDate" class="date-label">Bitiş</label>
+                                    <input type="date" id="statusChangedEndDate"
+                                           name="StatusChangedEndDate"
+                                           value="@f.StatusChangedEndDate.ToString("yyyy-MM-dd")"
+                                           class="form-input"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group-jql">
+                        <label class="form-label">JQL Preview</label>
+                        <textarea id="jqlPreview" name="CustomJql" class="jql-preview jql-editable"
+                                  rows="3" placeholder="JQL otomatik oluşturulacak...">@ViewBag.JqlPreview</textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" id="submitBtn" class="btn-primary">
+                            <span id="btnText">&#128269;&nbsp; Sonuçları Göster</span>
+                            <span id="btnLoading" class="hidden">Yükleniyor <span class="plane-fly">✈</span></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>

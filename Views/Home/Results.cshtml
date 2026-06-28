@@ -1,0 +1,272 @@
+@model List<AuditHub.Models.IssueRowDto>
+@{
+    Layout = null;
+    var rows = Model ?? [];
+    string Jql = ViewBag.Jql ?? "";
+    int IssueCount = ViewBag.IssueCount ?? rows.Count;
+    string Filename = ViewBag.Filename ?? "export.xlsx";
+    string Mudurluk = ViewBag.Mudurluk ?? "";
+    string YearMonth = ViewBag.YearMonth ?? "";
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AuditHub — Sonuçlar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<div class="page-wrapper">
+
+    <nav class="side-dock side-dock--collapsed" id="sideDock">
+        <div class="dock-brand">
+            <div class="dock-logo-icon">
+                <img src="/img/thy-logo.png" alt="THY" class="dock-logo-img"
+                     onerror="this.onerror=null;this.src='/img/thy-logo.svg';"/>
+            </div>
+            <div class="dock-brand-text">
+                <div class="dock-title">AuditHub</div>
+                <div class="dock-subtitle">Jira Export</div>
+            </div>
+            <button class="dock-toggle-btn" id="sidebarToggleBtn"
+                    onclick="toggleSidebar()" title="Menüyü aç/kapat">&#8250;</button>
+        </div>
+        <ul class="dock-nav">
+            <li class="dock-nav-item"><a href="/" style="color:inherit;text-decoration:none;">&#8592; Filtrelere Dön</a></li>
+            <li class="dock-nav-item"><a href="/dashboard" style="color:inherit;text-decoration:none;">&#9783; Dashboard</a></li>
+        </ul>
+        <div class="dock-footer">AuditHub &copy; 2026</div>
+    </nav>
+
+    <main class="main-content">
+        <header class="content-header">
+            <div>
+                <h1 class="content-title">Sonuçlar</h1>
+                <p class="content-subtitle">
+                    <span>@IssueCount</span> issue bulundu. Sarı kolonları doldurun, ardından Excel'e aktarın.
+                </p>
+            </div>
+        </header>
+
+        <div class="results-jql-bar">
+            <span class="results-jql-label">JQL:</span>
+            <code class="results-jql-text">@Jql</code>
+        </div>
+
+        <form action="/export-excel?filename=@Uri.EscapeDataString(Filename)" method="post" id="exportForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="Filename" value="@Filename"/>
+            <input type="hidden" name="Mudurluk" value="@Mudurluk"/>
+            <input type="hidden" name="YearMonth" value="@YearMonth"/>
+
+            <div class="results-table-wrapper">
+                @if (rows.Count > 0)
+                {
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th class="col-del"></th>
+                                <th class="col-seq">#</th>
+                                <th>Issue Type</th><th>Key</th>
+                                <th class="col-summary">Summary</th>
+                                <th>Status</th><th>Labels</th><th>Bileşen</th>
+                                <th>BTA (Test)</th><th>BTA (Dev)</th><th>BTA Root Cause</th>
+                                <th>Tester</th><th>Assignee</th><th>Created</th>
+                                <th class="col-yellow">Ürün</th>
+                                <th class="col-yellow">Issue Type Uygunluk</th>
+                                <th class="col-yellow">Analiz Format Uygunluk</th>
+                                <th class="col-yellow">Analiz İçerik Olgunluk</th>
+                                <th class="col-yellow col-wide">Analiz Neden Uygun Değil?</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < rows.Count; i++)
+                            {
+                                var row = rows[i];
+                                <tr>
+                                    <td class="col-del">
+                                        <button type="button" class="btn-del-row" onclick="deleteRow(this)" title="Satırı çıkar">✕</button>
+                                    </td>
+                                    <td class="col-seq">@(i + 1)</td>
+                                    <input type="hidden" name="Rows[@i].IssueType"    value="@row.IssueType"/>
+                                    <input type="hidden" name="Rows[@i].Key"          value="@row.Key"/>
+                                    <input type="hidden" name="Rows[@i].Summary"      value="@row.Summary"/>
+                                    <input type="hidden" name="Rows[@i].Status"       value="@row.Status"/>
+                                    <input type="hidden" name="Rows[@i].Labels"       value="@row.Labels"/>
+                                    <input type="hidden" name="Rows[@i].BtaTest"      value="@row.BtaTest"/>
+                                    <input type="hidden" name="Rows[@i].BtaDev"       value="@row.BtaDev"/>
+                                    <input type="hidden" name="Rows[@i].BtaRootCause" value="@row.BtaRootCause"/>
+                                    <input type="hidden" name="Rows[@i].Tester"       value="@row.Tester"/>
+                                    <input type="hidden" name="Rows[@i].Assignee"     value="@row.Assignee"/>
+                                    <input type="hidden" name="Rows[@i].Created"      value="@row.Created"/>
+                                    <input type="hidden" name="Rows[@i].Component"    value="@row.Component"/>
+                                    <td>@row.IssueType</td>
+                                    <td><a href="https://jira.thy.com/browse/@row.Key" target="_blank" class="jira-link">@row.Key</a></td>
+                                    <td class="col-summary">@row.Summary</td>
+                                    <td><span class="status-badge">@row.Status</span></td>
+                                    <td>@row.Labels</td>
+                                    <td>@row.Component</td>
+                                    <td class="bta-cell">@row.BtaTest</td>
+                                    <td>@row.BtaDev</td>
+                                    <td>@row.BtaRootCause</td>
+                                    <td>@row.Tester</td>
+                                    <td>@row.Assignee</td>
+                                    <td>@row.Created</td>
+                                    <td class="col-yellow">
+                                        <input type="text" name="Rows[@i].Urun" value="@row.Urun" class="tbl-input" placeholder="Ürün adı..."/>
+                                    </td>
+                                    <td class="col-yellow">
+                                        <select name="Rows[@i].IssueTypeUygunluk" class="tbl-select">
+                                            <option value="">—</option>
+                                            @foreach (var opt in new[]{"Uygun","Uygun Değil","Hesaplanamaz"})
+                                            { <option value="@opt" selected="@(row.IssueTypeUygunluk == opt ? "selected" : null)">@opt</option> }
+                                        </select>
+                                    </td>
+                                    <td class="col-yellow">
+                                        <select name="Rows[@i].AnalizFormatUygunluk" class="tbl-select">
+                                            <option value="">—</option>
+                                            @foreach (var opt in new[]{"Uygun","Uygun Değil","Hesaplanamaz"})
+                                            { <option value="@opt" selected="@(row.AnalizFormatUygunluk == opt ? "selected" : null)">@opt</option> }
+                                        </select>
+                                    </td>
+                                    <td class="col-yellow">
+                                        <select name="Rows[@i].AnalizIcerikOlgunluk" class="tbl-select">
+                                            <option value="">—</option>
+                                            @foreach (var opt in new[]{"Uygun","Uygun Değil","Hesaplanamaz"})
+                                            { <option value="@opt" selected="@(row.AnalizIcerikOlgunluk == opt ? "selected" : null)">@opt</option> }
+                                        </select>
+                                    </td>
+                                    <td class="col-yellow col-wide">
+                                        <input type="text" name="Rows[@i].AnalizNedenUygunDegil"
+                                               value="@row.AnalizNedenUygunDegil" class="tbl-input" placeholder="Açıklama..."/>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="results-empty">
+                        <p>Seçilen filtrelere uygun issue bulunamadı.</p>
+                        <a href="/" class="btn-primary">&#8592; Filtrelere Dön</a>
+                    </div>
+                }
+            </div>
+
+            <div class="results-actions-row">
+                <button type="button" class="btn-secondary" onclick="addNewRow()">+ Satır Ekle</button>
+            </div>
+
+            <div class="results-toolbar results-toolbar-bottom" @(rows.Count == 0 ? "style=\"display:none\"" : "")>
+                <a href="/" class="btn-secondary">&#8592; Filtrelere Dön</a>
+                <button type="submit" class="btn-primary" id="exportBtn">
+                    <span id="exportBtnText">&#8595;&nbsp; Excel İndir</span>
+                    <span id="exportBtnLoading" class="hidden">İndiriliyor <span class="plane-fly">✈</span> (<span id="exportCountdown">8</span>s)</span>
+                </button>
+            </div>
+        </form>
+
+        <div id="exportModal" class="modal hidden">
+            <div class="modal-content">
+                <h3 style="margin-top:0;margin-bottom:16px;">Dashboard'a Aktarım</h3>
+                <p style="margin:0 0 20px 0;color:#555;font-size:14px;">
+                    Aylık verileriniz <strong>dashboard</strong>'a aktarılsın mı?
+                </p>
+                <div style="display:flex;gap:10px;justify-content:flex-end;">
+                    <button type="button" class="btn-secondary" onclick="doExport(false)">Hayır</button>
+                    <button type="button" class="btn-primary" onclick="doExport(true)">Evet</button>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+function deleteRow(btn){btn.closest('tr').remove();reindexRows();updateCount();}
+function addNewRow(){
+    var tbody=document.querySelector('.results-table tbody');
+    if(!tbody){
+        var wrapper=document.querySelector('.results-table-wrapper');
+        var table=document.createElement('table');
+        table.className='results-table';
+        table.innerHTML='<thead><tr><th class="col-del"></th><th class="col-seq">#</th><th>Issue Type</th><th>Key</th><th class="col-summary">Summary</th><th>Status</th><th>Labels</th><th>Bileşen</th><th>BTA (Test)</th><th>BTA (Dev)</th><th>BTA Root Cause</th><th>Tester</th><th>Assignee</th><th>Created</th><th class="col-yellow">Ürün</th><th class="col-yellow">Issue Type Uygunluk</th><th class="col-yellow">Analiz Format Uygunluk</th><th class="col-yellow">Analiz İçerik Olgunluk</th><th class="col-yellow col-wide">Analiz Neden Uygun Değil?</th></tr></thead><tbody></tbody>';
+        var empty=wrapper.querySelector('.results-empty');
+        if(empty){empty.style.display='none';wrapper.insertBefore(table,empty);}else{wrapper.appendChild(table);}
+        var bb=document.querySelector('.results-toolbar-bottom');if(bb)bb.style.display='flex';
+        tbody=table.querySelector('tbody');
+    }
+    var idx=tbody.querySelectorAll('tr').length;
+    var tr=document.createElement('tr');
+    function inp(f,ph,cls){return '<td'+(cls?' class="'+cls+'"':'')+'>'+
+        '<input type="text" name="Rows['+idx+'].'+f+'" class="tbl-input" placeholder="'+ph+'"/></td>';}
+    function sel(f){return '<td class="col-yellow"><select name="Rows['+idx+'].'+f+'" class="tbl-select">'+
+        '<option value="">—</option><option value="Uygun">Uygun</option>'+
+        '<option value="Uygun Değil">Uygun Değil</option>'+
+        '<option value="Hesaplanamaz">Hesaplanamaz</option></select></td>';}
+    tr.innerHTML=
+        '<td class="col-del"><button type="button" class="btn-del-row" onclick="deleteRow(this)">✕</button></td>'+
+        '<td class="col-seq">'+(idx+1)+'</td>'+
+        inp('IssueType','Issue Type')+inp('Key','Key')+inp('Summary','Summary','col-summary')+
+        inp('Status','Status')+inp('Labels','Labels')+inp('Component','Bileşen')+
+        inp('BtaTest','BTA Test','bta-cell')+inp('BtaDev','BTA Dev')+inp('BtaRootCause','BTA RC')+
+        inp('Tester','Tester')+inp('Assignee','Assignee')+inp('Created','yyyy-MM-dd')+
+        inp('Urun','Ürün adı...','col-yellow')+sel('IssueTypeUygunluk')+
+        sel('AnalizFormatUygunluk')+sel('AnalizIcerikOlgunluk')+
+        '<td class="col-yellow col-wide"><input type="text" name="Rows['+idx+'].AnalizNedenUygunDegil" class="tbl-input" placeholder="Açıklama..."/></td>';
+    tbody.appendChild(tr);reindexRows();updateCount();
+    tr.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function reindexRows(){
+    document.querySelectorAll('.results-table tbody tr').forEach(function(tr,idx){
+        tr.querySelector('.col-seq').textContent=idx+1;
+        tr.querySelectorAll('input[name],select[name]').forEach(function(el){
+            el.name=el.name.replace(/Rows\[\d+\]/,'Rows['+idx+']');
+        });
+    });
+}
+function updateCount(){
+    var cnt=document.querySelectorAll('.results-table tbody tr').length;
+    var el=document.querySelector('.content-subtitle span');if(el)el.textContent=cnt;
+}
+function toggleSidebar(){
+    var dock=document.getElementById('sideDock');
+    var btn=document.getElementById('sidebarToggleBtn');
+    var c=dock.classList.toggle('side-dock--collapsed');
+    if(btn)btn.innerHTML=c?'&#8250;':'&#8249;';
+}
+var exportFormPending=false;
+function doExport(toDashboard){
+    var form=document.getElementById('exportForm');
+    var ex=form.querySelector('input[name="AutoExportToDashboard"]');if(ex)ex.remove();
+    if(toDashboard){var i=document.createElement('input');i.type='hidden';
+        i.name='AutoExportToDashboard';i.value='true';form.appendChild(i);}
+    exportFormPending=true;
+    document.getElementById('exportModal').classList.add('hidden');
+    form.submit();
+}
+document.getElementById('exportForm').addEventListener('submit',function(e){
+    if(!exportFormPending){
+        e.preventDefault();
+        document.getElementById('exportModal').classList.remove('hidden');
+        return false;
+    }
+    var btn=document.getElementById('exportBtn');
+    var txt=document.getElementById('exportBtnText');
+    var loading=document.getElementById('exportBtnLoading');
+    var cd=document.getElementById('exportCountdown');
+    if(btn)btn.disabled=true;if(txt)txt.classList.add('hidden');
+    if(loading)loading.classList.remove('hidden');
+    var sec=8;if(cd)cd.textContent=sec;
+    var t=setInterval(function(){sec--;
+        if(cd)cd.textContent=sec>0?sec:0;
+        if(sec<=0){clearInterval(t);if(btn)btn.disabled=false;
+            if(txt)txt.classList.remove('hidden');if(loading)loading.classList.add('hidden');
+            exportFormPending=false;}},1000);
+});
+</script>
+</body>
+</html>
