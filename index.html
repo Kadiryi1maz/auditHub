@@ -20,14 +20,127 @@
   <div id="content"></div>
 
   <script>
+    // Embedded fallback data so index.html works when opened via file:// (zip içinde)
+    window.__EMBEDDED_DATA__ = [ {
+  "mudurluk" : "Açık Sistem Çöz. Md.",
+  "yearMonth" : "2026-06",
+  "totalTasks" : 27,
+  "formatUygun" : 0,
+  "formatUygunDegil" : 2,
+  "formatHesap" : 0,
+  "icerikUygun" : 1,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "09.06.2026 10:45"
+}, {
+  "mudurluk" : "Rezervasyon & Biletleme Md.",
+  "yearMonth" : "2026-01",
+  "totalTasks" : 0,
+  "formatUygun" : 0,
+  "formatUygunDegil" : 0,
+  "formatHesap" : 0,
+  "icerikUygun" : 0,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "12.06.2026 15:07"
+}, {
+  "mudurluk" : "Doğrudan Satış Çöz. Md.",
+  "yearMonth" : "2026-01",
+  "totalTasks" : 27,
+  "formatUygun" : 0,
+  "formatUygunDegil" : 2,
+  "formatHesap" : 0,
+  "icerikUygun" : 1,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "09.06.2026 10:49"
+}, {
+  "mudurluk" : "Açık Sistem Çöz. Md.",
+  "yearMonth" : "2026-01",
+  "totalTasks" : 4,
+  "formatUygun" : 4,
+  "formatUygunDegil" : 0,
+  "formatHesap" : 0,
+  "icerikUygun" : 3,
+  "icerikUygunDegil" : 1,
+  "icerikHesap" : 0,
+  "btaCount" : 1,
+  "lastUpdated" : "08.06.2026 16:57"
+}, {
+  "mudurluk" : "Gelir Yönetimi ve Ücret Çöz. Md.",
+  "yearMonth" : "2026-06",
+  "totalTasks" : 18,
+  "formatUygun" : 1,
+  "formatUygunDegil" : 0,
+  "formatHesap" : 0,
+  "icerikUygun" : 0,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "09.06.2026 16:12"
+}, {
+  "mudurluk" : "Rezervasyon & Biletleme Md.",
+  "yearMonth" : "2026-06",
+  "totalTasks" : 11,
+  "formatUygun" : 1,
+  "formatUygunDegil" : 0,
+  "formatHesap" : 0,
+  "icerikUygun" : 1,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "12.06.2026 15:05"
+}, {
+  "mudurluk" : "Rezervasyon & Biletleme Md.",
+  "yearMonth" : "2026-05",
+  "totalTasks" : 8,
+  "formatUygun" : 8,
+  "formatUygunDegil" : 0,
+  "formatHesap" : 0,
+  "icerikUygun" : 8,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "09.06.2026 10:30"
+}, {
+  "mudurluk" : "Açık Sistem Çöz. Md.",
+  "yearMonth" : "2026-02",
+  "totalTasks" : 0,
+  "formatUygun" : 0,
+  "formatUygunDegil" : 0,
+  "formatHesap" : 0,
+  "icerikUygun" : 0,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "10.06.2026 01:40"
+}, {
+  "mudurluk" : "Açık Sistem Çöz. Md.",
+  "yearMonth" : "2026-05",
+  "totalTasks" : 8,
+  "formatUygun" : 8,
+  "formatUygunDegil" : 0,
+  "formatHesap" : 0,
+  "icerikUygun" : 8,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "09.06.2026 10:29"
+} ];
+
     async function loadData(){
       try{
+        // If running from file://, fetch may be blocked; attempt fetch then fallback
         const res = await fetch('./data/dashboard.json');
         if(!res.ok) throw new Error('Veri bulunamadı: ' + res.status);
         const data = await res.json();
         render(data);
       }catch(e){
-        document.getElementById('status').textContent = 'Hata: ' + e.message;
+        document.getElementById('status').textContent = 'Hata: ' + e.message + ' — gömülü veri kullanılıyor';
+        render(window.__EMBEDDED_DATA__);
       }
     }
 
