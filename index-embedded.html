@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AuditHub - Static Viewer (Embedded)</title>
+  <link rel="stylesheet" href="./wwwroot/css/style.css">
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    th { background: #f4f4f4; }
+  </style>
+</head>
+<body>
+  <h1>AuditHub - Static Viewer (Embedded)</h1>
+  <p>Bu versiyon `data/dashboard.json` verisini doğrudan sayfaya gömüyor — zip'ten açıldığında çalışır.</p>
+
+  <div id="status">Yükleniyor…</div>
+  <div id="content"></div>
+
+  <script>
+    // Gömülü veri. Eğer `data/dashboard.json`'e erişim başarısız olursa bu veri kullanılır.
+    window.__EMBEDDED_DATA__ = [ {
+  "mudurluk" : "Açık Sistem Çöz. Md.",
+  "yearMonth" : "2026-06",
+  "totalTasks" : 27,
+  "formatUygun" : 0,
+  "formatUygunDegil" : 2,
+  "formatHesap" : 0,
+  "icerikUygun" : 1,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "09.06.2026 10:45"
+}, {
+  "mudurluk" : "Rezervasyon & Biletleme Md.",
+  "yearMonth" : "2026-01",
+  "totalTasks" : 0,
+  "formatUygun" : 0,
+  "formatUygunDegil" : 0,
+  "formatHesap" : 0,
+  "icerikUygun" : 0,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "12.06.2026 15:07"
+}, {
+  "mudurluk" : "Doğrudan Satış Çöz. Md.",
+  "yearMonth" : "2026-01",
+  "totalTasks" : 27,
+  "formatUygun" : 0,
+  "formatUygunDegil" : 2,
+  "formatHesap" : 0,
+  "icerikUygun" : 1,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "09.06.2026 10:49"
+}, {
+  "mudurluk" : "Açık Sistem Çöz. Md.",
+  "yearMonth" : "2026-01",
+  "totalTasks" : 4,
+  "formatUygun" : 4,
+  "formatUygunDegil" : 0,
+  "formatHesap" : 0,
+  "icerikUygun" : 3,
+  "icerikUygunDegil" : 1,
+  "icerikHesap" : 0,
+  "btaCount" : 1,
+  "lastUpdated" : "08.06.2026 16:57"
+}, {
+  "mudurluk" : "Gelir Yönetimi ve Ücret Çöz. Md.",
+  "yearMonth" : "2026-06",
+  "totalTasks" : 18,
+  "formatUygun" : 1,
+  "formatUygunDegil" : 0,
+  "formatHesap" : 0,
+  "icerikUygun" : 0,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "09.06.2026 16:12"
+}, {
+  "mudurluk" : "Rezervasyon & Biletleme Md.",
+  "yearMonth" : "2026-06",
+  "totalTasks" : 11,
+  "formatUygun" : 1,
+  "formatUygunDegil" : 0,
+  "formatHesap" : 0,
+  "icerikUygun" : 1,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "12.06.2026 15:05"
+}, {
+  "mudurluk" : "Rezervasyon & Biletleme Md.",
+  "yearMonth" : "2026-05",
+  "totalTasks" : 8,
+  "formatUygun" : 8,
+  "formatUygunDegil" : 0,
+  "formatHesap" : 0,
+  "icerikUygun" : 8,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "09.06.2026 10:30"
+}, {
+  "mudurluk" : "Açık Sistem Çöz. Md.",
+  "yearMonth" : "2026-02",
+  "totalTasks" : 0,
+  "formatUygun" : 0,
+  "formatUygunDegil" : 0,
+  "formatHesap" : 0,
+  "icerikUygun" : 0,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "10.06.2026 01:40"
+}, {
+  "mudurluk" : "Açık Sistem Çöz. Md.",
+  "yearMonth" : "2026-05",
+  "totalTasks" : 8,
+  "formatUygun" : 8,
+  "formatUygunDegil" : 0,
+  "formatHesap" : 0,
+  "icerikUygun" : 8,
+  "icerikUygunDegil" : 0,
+  "icerikHesap" : 0,
+  "btaCount" : 0,
+  "lastUpdated" : "09.06.2026 10:29"
+} ];
+
+    async function loadData(){
+      try{
+        const res = await fetch('./data/dashboard.json');
+        if(!res.ok) throw new Error('Veri bulunamadı: ' + res.status);
+        const data = await res.json();
+        render(data);
+      }catch(e){
+        // Eğer fetch başarısızsa gömülü veriyi kullan
+        document.getElementById('status').textContent = 'Hata: ' + e.message + ' — gömülü veri kullanılıyor';
+        render(window.__EMBEDDED_DATA__);
+      }
+    }
+
+    function render(data){
+      document.getElementById('status').textContent = '';
+      if(!Array.isArray(data) && data.entries) data = data.entries;
+      if(!Array.isArray(data)){
+        document.getElementById('content').textContent = JSON.stringify(data, null, 2);
+        return;
+      }
+      if(data.length === 0){ document.getElementById('content').textContent = 'Kayıt yok'; return; }
+
+      const table = document.createElement('table');
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      const keys = Object.keys(data[0]);
+      keys.forEach(k => { const th = document.createElement('th'); th.textContent = k; headerRow.appendChild(th); });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      data.forEach(row => {
+        const tr = document.createElement('tr');
+        keys.forEach(k => {
+          const td = document.createElement('td');
+          let v = row[k];
+          if(typeof v === 'object') v = JSON.stringify(v);
+          td.textContent = v === undefined ? '' : v;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      const container = document.getElementById('content');
+      container.innerHTML = '';
+      container.appendChild(table);
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
+
